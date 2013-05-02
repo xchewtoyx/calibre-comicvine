@@ -9,7 +9,7 @@ import re
 class CalibreHandler(logging.Handler):
   def emit(self, record):
     level = getattr(calibre_logging, record.levelname)
-    calibre_logging.prints(level, record.getMessage())
+    calibre_logging.default_log.prints(level, record.getMessage())
 
 class Comicvine(Source):
   name = 'Comicvine'
@@ -45,6 +45,7 @@ class Comicvine(Source):
         (re.compile(pat, re.IGNORECASE), repl) for pat, repl in [
           # Remove parenthesised strings
           (r'(?i)\([^)]*\)', ''),
+          (r'(?i)[_+]+', ' '),
           ]]
 
     for pat, repl in title_patterns:
@@ -72,7 +73,7 @@ class Comicvine(Source):
     title_tokens = []
     for token in self.get_title_tokens(title, strip_joiners=False):
       if token.startswith('#'):
-        token = token.lstrip('#')
+        token = token.strip('#:')
         if token.isdigit():
           issue_number = int(token)
           break # Stop processing at issue number
@@ -88,7 +89,7 @@ class Comicvine(Source):
     # Look for author match in People
     candidate_authors = []
     author_name = ' '.join(self.get_author_tokens(authors))
-    if author_name:
+    if author_name and author_name != 'Unknown':
       log.info("Searching for author: %s", author_name)
       candidate_authors = pycomicvine.People(
         filter='name:%s' % (author_name), 
@@ -128,7 +129,7 @@ class Comicvine(Source):
         'publisher', 'store_date', 'cover_date'])
     title = '%s #%d' %  (issue.volume.name, issue.issue_number)
     if issue.name: 
-      title = title + ':%s' % (issue.name)
+      title = title + ': %s' % (issue.name)
     authors = [p.name for p in issue.person_credits]
     mi = Metadata(title, authors)
     mi.series = issue.volume.name
