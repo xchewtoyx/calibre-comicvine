@@ -3,10 +3,10 @@ from calibre_plugins.comicvine import pycomicvine
 from calibre.utils.config import JSONConfig
 
 prefs = JSONConfig('plugins/comicvine')
-
 prefs.defaults['api_key'] = ''
 
 class ConfigWidget(QWidget):
+  'Configuration widget'
   def __init__(self):
     QWidget.__init__(self)
     self.l = QHBoxLayout()
@@ -21,8 +21,10 @@ class ConfigWidget(QWidget):
     self.label.setBuddy(self.msg)
 
   def save_settings(self):
+    'Apply new settings value'
     prefs['api_key'] = unicode(self.msg.text())
     pycomicvine.api_key = prefs['api_key']
 
   def commit(self):
+    'write out updated json file'
     prefs.commit()

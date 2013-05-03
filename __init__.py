@@ -10,7 +10,6 @@ if __name__ == '__main__':
   from calibre.ebooks.metadata.sources.test import (test_identify_plugin,
                                                     title_test, authors_test,
                                                     series_test)
-  pycomicvine.api_key = prefs['api_key']
   test_identify_plugin(Comicvine.name, [
       (
         {
