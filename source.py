@@ -110,6 +110,7 @@ class Comicvine(Source):
       if comicvine_id is not None:
         log.debug('Looking up Issue(%d)' % comicvine_id)
         self.enqueue(log, result_queue, comicvine_id)
+        return None
 
     if title:
       # Look up candidate volumes based on title
