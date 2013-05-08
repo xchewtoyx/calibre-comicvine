@@ -6,9 +6,12 @@ A calibre metadata source plugin for comicvine.com
 Dependencies:
 
  * pycomicvine (https://github.com/authmillenon/pycomicvine)
+ * Levenshtein (optional)
+
 
 ## Usage
-You can search for resources on comicvine.com.
+Allows you to search comicvine for metadata for your comics and graphic
+novels stored in Calibre.
 
 You will need an API Key to use this source
  
