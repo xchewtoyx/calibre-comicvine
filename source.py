@@ -14,6 +14,11 @@ import calibre.utils.logging as calibre_logging
 from calibre_plugins.comicvine.config import PREFS
 from calibre_plugins.comicvine import utils
 
+try:
+  import Levenshtein
+except ImportError:
+  pass
+
 class Comicvine(Source):
   ''' Metadata source implementation '''
   name = 'Comicvine'
@@ -101,6 +106,40 @@ class Comicvine(Source):
       self.clean_downloaded_metadata(metadata)
       result_queue.put(metadata)
       log.debug('Added Issue(%s) to queue' % metadata.title)
+
+  def identify_results_keygen(self, title=None, authors=None, 
+                              identifiers=None):
+    'Provide a keying function for result comparison'
+    def keygen(metadata):
+      '''
+      Implement multi-result comparisons.
+      
+      1. Prefer an entry where the comicvine id matches
+      2. Prefer similar titles using Levenshtein ratio (if module available)
+      3. Penalise entries where the issue number is not in the title
+      4. Prefer matching authors (the more matches, the higher the preference)
+      '''
+      score = 50
+      if identifiers:
+        try:
+          if metadata.get_identifier('comicvine') == identifiers['comicvine']:
+            return 0
+        except (KeyError, AttributeError):
+          pass
+      if title:
+        try:
+          score += 100 - int(100 * Levenshtein.ratio(metadata.title, title))
+        except (NameError, TypeError):
+          pass
+        if metadata.series_index not in title:
+          score += 20
+      if authors:
+        for author in authors:
+          if author in metadata.authors:
+            score -= 10
+      return score
+
+    return keygen
 
   def identify(self, log, result_queue, abort, 
                title=None, authors=None, identifiers=None, timeout=30):
