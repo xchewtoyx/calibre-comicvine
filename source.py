@@ -1,6 +1,8 @@
 '''
 calibre_plugins.comicvine - A calibre metadata source for comicvine
 '''
+#pylint: disable-msg=R0913,R0904
+
 import logging
 import pycomicvine
 import re
@@ -9,7 +11,7 @@ from Queue import Queue
 
 from calibre.ebooks.metadata.sources.base import Source
 import calibre.utils.logging as calibre_logging 
-from calibre_plugins.comicvine.config import prefs
+from calibre_plugins.comicvine.config import PREFS
 from calibre_plugins.comicvine import utils
 
 class Comicvine(Source):
@@ -31,11 +33,10 @@ class Comicvine(Source):
     self.logger = logging.getLogger('urls')
     self.logger.setLevel(logging.DEBUG)
     self.logger.addHandler(utils.CalibreHandler(logging.DEBUG))
-    pycomicvine.api_key = prefs['api_key']
+    pycomicvine.api_key = PREFS['api_key']
     Source.__init__(self, *args, **kwargs)
 
   def config_widget(self):
-    # pylint: disable=F0401
     from calibre_plugins.comicvine.config import ConfigWidget
     return ConfigWidget()
 

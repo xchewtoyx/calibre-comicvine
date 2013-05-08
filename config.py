@@ -1,9 +1,12 @@
+'''
+Configuration for the Comicvine metadata source
+'''
 from PyQt4.Qt import QWidget, QHBoxLayout, QLabel, QLineEdit
 from calibre_plugins.comicvine import pycomicvine
 from calibre.utils.config import JSONConfig
 
-prefs = JSONConfig('plugins/comicvine')
-prefs.defaults['api_key'] = ''
+PREFS = JSONConfig('plugins/comicvine')
+PREFS.defaults['api_key'] = ''
 
 class ConfigWidget(QWidget):
   'Configuration widget'
@@ -16,15 +19,12 @@ class ConfigWidget(QWidget):
     self.layout.addWidget(self.label)
 
     self.msg = QLineEdit(self)
-    self.msg.setText(prefs['api_key'])
+    self.msg.setText(PREFS['api_key'])
     self.layout.addWidget(self.msg)
     self.label.setBuddy(self.msg)
 
   def save_settings(self):
     'Apply new settings value'
-    prefs['api_key'] = unicode(self.msg.text())
-    pycomicvine.api_key = prefs['api_key']
+    PREFS['api_key'] = unicode(self.msg.text())
+    pycomicvine.api_key = PREFS['api_key']
 
-  def commit(self):
-    'write out updated json file'
-    prefs.commit()

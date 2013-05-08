@@ -39,7 +39,6 @@ def build_meta(log, issue_id):
   meta.pubdate = issue.store_date or issue.cover_date
   return meta
 
-
 def find_volumes(volume_title, log):
   '''Look up volumes matching title string'''
   log.debug('Looking up volume: %s' % volume_title)

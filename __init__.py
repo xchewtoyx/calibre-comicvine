@@ -6,7 +6,6 @@ import pycomicvine
 from calibre_plugins.comicvine.source import Comicvine
 
 if __name__ == '__main__':
-  from calibre_plugins.comicvine.config import prefs
   from calibre.ebooks.metadata.sources.test import (test_identify_plugin,
                                                     title_test, authors_test,
                                                     series_test)
