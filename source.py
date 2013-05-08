@@ -14,6 +14,7 @@ import calibre.utils.logging as calibre_logging
 from calibre_plugins.comicvine.config import PREFS
 from calibre_plugins.comicvine import utils
 
+# Optional Import for fuzzy title matching
 try:
   import Levenshtein
 except ImportError:
@@ -24,7 +25,8 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 5, 0)
+  version = (0, 6, 0)
+  #TODO(xchewtoyx): Implement cover capability
   capabilities = frozenset(['identify'])
   touched_fields = frozenset([
       'title', 'authors', 'identifier:comicvine', 'comments', 'publisher', 
@@ -127,6 +129,8 @@ class Comicvine(Source):
         except (KeyError, AttributeError):
           pass
       if title:
+        #TODO(xchewtoyx): improve title matching when Levenshtein not
+        #available
         try:
           score += 100 - int(100 * Levenshtein.ratio(metadata.title, title))
         except (NameError, TypeError):
