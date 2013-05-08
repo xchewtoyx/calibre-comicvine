@@ -9,15 +9,15 @@ class ConfigWidget(QWidget):
   'Configuration widget'
   def __init__(self):
     QWidget.__init__(self)
-    self.l = QHBoxLayout()
-    self.setLayout(self.l)
+    self.layout = QHBoxLayout()
+    self.setLayout(self.layout)
 
     self.label = QLabel('&api key:')
-    self.l.addWidget(self.label)
+    self.layout.addWidget(self.label)
 
     self.msg = QLineEdit(self)
     self.msg.setText(prefs['api_key'])
-    self.l.addWidget(self.msg)
+    self.layout.addWidget(self.msg)
     self.label.setBuddy(self.msg)
 
   def save_settings(self):

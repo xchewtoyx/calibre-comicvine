@@ -8,9 +8,9 @@ import re
 from Queue import Queue
 
 from calibre.ebooks.metadata.sources.base import Source
-from calibre.utils import logging as calibre_logging
-from calibre_plugins.comicvine.config import prefs # pylint: disable=F0401
-from calibre_plugins.comicvine import utils # pylint: disable=F0401
+import calibre.utils.logging as calibre_logging 
+from calibre_plugins.comicvine.config import prefs
+from calibre_plugins.comicvine import utils
 
 class Comicvine(Source):
   ''' Metadata source implementation '''
@@ -79,20 +79,21 @@ class Comicvine(Source):
     (title, authors, ids) = (None, [], {})
     for arg in args:
       if arg.startswith('t:'):
-        title = arg.split(':',1)[1]
+        title = arg.split(':', 1)[1]
       if arg.startswith('a:'):
-        authors.append(arg.split(':',1)[1])
+        authors.append(arg.split(':', 1)[1])
       if arg.startswith('i:'):
-        (idtype, identifier) = arg.split(':',2)[1:]
+        (idtype, identifier) = arg.split(':', 2)[1:]
         ids[idtype] = int(identifier)
-    rq = Queue()
+    result_queue = Queue()
     log = calibre_logging.default_log
     self.identify(
-      log, rq, False, title=title, authors=authors, identifiers=ids)
-    for result in rq.queue:
+      log, result_queue, False, title=title, authors=authors, identifiers=ids)
+    for result in result_queue.queue:
       log.info('Found: %s [%s]' % (result.title, result.pubdate))
 
   def enqueue(self, log, result_queue, issue_id):
+    'Add a result entry to the result queue'
     log.debug('Adding Issue(%d) to queue' % issue_id)
     metadata = utils.build_meta(log, issue_id)
     if metadata:
