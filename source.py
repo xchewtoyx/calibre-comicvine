@@ -53,8 +53,16 @@ class Comicvine(Source):
   def is_configured(self):
     return bool(pycomicvine.api_key)
 
-  def _find_title(self, title, log):
-    '''Extract volume name and issue number from issue title'''
+  def _normalised_title(self, title):
+    '''
+    returns (issue_number,title_tokens)
+    
+    This method takes the provided title and breaks it down into
+    searchable components.  The issue number should be preceeded by a
+    '#' mark or it will be treated as a word in the title.  Anything
+    provided after the issue number (e.g. a sub-title) will be
+    ignored.
+    '''
     title_tokens = []
     issue_number = None
     volume = re.compile(r'^(?i)(v|vol)#?\d+$')
@@ -67,7 +75,12 @@ class Comicvine(Source):
           issue_number = int(token)
           break # Stop processing at issue number
       else:
-        title_tokens.append(token)
+        title_tokens.append(token.lower())
+    return issue_number, title_tokens
+
+  def _find_title(self, title, log):
+    '''Extract volume name and issue number from issue title'''
+    (issue_number, title_tokens) = self._normalised_title(title)
     candidate_volumes = utils.find_volumes(' '.join(title_tokens), log)
     return (issue_number, candidate_volumes)
 
