@@ -97,7 +97,8 @@ class Comicvine(Source):
     log = calibre_logging.default_log
     self.identify(
       log, result_queue, False, title=title, authors=authors, identifiers=ids)
-    for result in result_queue.queue:
+    ranking = self.identify_results_keygen(title, authors, ids)
+    for result in sorted(result_queue.queue, key=ranking):
       log.info('Found: %s [%s]' % (result.title, result.pubdate))
 
   def enqueue(self, log, result_queue, issue_id):
@@ -132,7 +133,7 @@ class Comicvine(Source):
         #TODO(xchewtoyx): improve title matching when Levenshtein not
         #available
         try:
-          score += 100 - int(100 * Levenshtein.ratio(metadata.title, title))
+          score += 100 - int(100 * Levenshtein.ratio(metadata.series, title))
         except (NameError, TypeError):
           pass
         if metadata.series_index not in title:
