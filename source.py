@@ -112,7 +112,8 @@ class Comicvine(Source):
       log, result_queue, False, title=title, authors=authors, identifiers=ids)
     ranking = self.identify_results_keygen(title, authors, ids)
     for result in sorted(result_queue.queue, key=ranking):
-      log.info('Found: %s [%s]' % (result.title, result.pubdate))
+      log.info('%04d: %s [%s]' % (
+          ranking(result), result.title, result.pubdate))
 
   def enqueue(self, log, result_queue, issue_id):
     'Add a result entry to the result queue'
@@ -135,7 +136,7 @@ class Comicvine(Source):
       3. Penalise entries where the issue number is not in the title
       4. Prefer matching authors (the more matches, the higher the preference)
       '''
-      score = 50
+      score = 0
       if identifiers:
         try:
           if metadata.get_identifier('comicvine') == identifiers['comicvine']:
@@ -143,18 +144,25 @@ class Comicvine(Source):
         except (KeyError, AttributeError):
           pass
       if title:
-        #TODO(xchewtoyx): improve title matching when Levenshtein not
-        #available
+        volume = '%s #%s' % (metadata.series.lower(), metadata.series_index)
+        score += abs(len(volume) - len(title))
+        (issue_number, title_tokens) = self._normalised_title(title)
+        for token in title_tokens:
+          if token not in volume:
+            score += 10
         try:
-          score += 100 - int(100 * Levenshtein.ratio(metadata.series, title))
-        except (NameError, TypeError):
+          similarity = Levenshtein.ratio(unicode(volume), unicode(title))
+          score += 100 - int(100 * similarity)
+        except NameError:
           pass
-        if metadata.series_index not in title:
+        if metadata.series_index != issue_number:
           score += 20
+        if metadata.series_index not in title:
+          score += 10
       if authors:
         for author in authors:
-          if author in metadata.authors:
-            score -= 10
+          if author not in metadata.authors:
+            score += 10
       return score
 
     return keygen
