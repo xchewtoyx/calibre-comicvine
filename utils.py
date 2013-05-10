@@ -119,6 +119,10 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
   '''
   score = 0
   volume = '%s #%s' % (metadata.series.lower(), metadata.series_index)
+  match_year = re.compile(r'\((\d{4})\)')
+  year = match_year.search(title)
+  if year:
+    score += abs(metadata.pubdate.year - int(year.group(1)))
   score += abs(len(volume) - len(title))
   for token in title_tokens:
     if token not in volume:
