@@ -2,11 +2,18 @@
 calibre_plugins.comicvine - A calibre metadata source for comicvine
 '''
 import logging
+import re
 
 import pycomicvine
 
 from calibre.ebooks.metadata.book.base import Metadata
 from calibre.utils import logging as calibre_logging # pylint: disable=W0404
+
+# Optional Import for fuzzy title matching
+try:
+  import Levenshtein
+except ImportError:
+  pass
 
 class CalibreHandler(logging.Handler):
   '''
@@ -63,3 +70,90 @@ def find_issues(candidate_volumes, issue_number, log):
     log.debug('%d matches found' % len(candidate_issues))
   return candidate_issues
 
+def normalised_title(query, title):
+  '''
+  returns (issue_number,title_tokens)
+  
+  This method takes the provided title and breaks it down into
+  searchable components.  The issue number should be preceeded by a
+  '#' mark or it will be treated as a word in the title.  Anything
+  provided after the issue number (e.g. a sub-title) will be
+  ignored.
+  '''
+  title_tokens = []
+  issue_number = None
+  volume = re.compile(r'^(?i)(v|vol)#?\d+$')
+  for token in query.get_title_tokens(title):
+    if volume.match(token):
+      continue
+    if token.startswith('#'):
+      token = token.strip('#:')
+    if token.isdigit():
+      issue_number = int(token)
+      break # Stop processing at issue number
+    else:
+      title_tokens.append(token.lower())
+  return issue_number, title_tokens
+
+def find_title(query, title, log):
+  '''Extract volume name and issue number from issue title'''
+  (issue_number, title_tokens) = normalised_title(query, title)
+  candidate_volumes = find_volumes(' '.join(title_tokens), log)
+  return (issue_number, candidate_volumes)
+
+def find_authors(query, authors, log):
+  '''Find people matching author string'''
+  candidate_authors = []
+  author_name = ' '.join(query.get_author_tokens(authors))
+  if author_name and author_name != 'Unknown':
+    log.debug("Searching for author: %s" % author_name)
+    candidate_authors = pycomicvine.People(
+      filter='name:%s' % (author_name), 
+      field_list=['id', 'name'])
+    log.debug("%d matches found" % len(candidate_authors))
+  return candidate_authors
+
+def score_title(metadata, title=None, issue_number=None, title_tokens=None):
+  '''
+  Calculate title matching ranking
+  '''
+  score = 0
+  volume = '%s #%s' % (metadata.series.lower(), metadata.series_index)
+  score += abs(len(volume) - len(title))
+  for token in title_tokens:
+    if token not in volume:
+      score += 10
+    try:
+      similarity = Levenshtein.ratio(unicode(volume), unicode(title))
+      score += 100 - int(100 * similarity)
+    except NameError:
+      pass
+    if metadata.series_index != issue_number:
+      score += 20
+    if metadata.series_index not in title:
+      score += 10
+  return score
+
+def keygen(metadata, title=None, authors=None, identifiers=None, **kwargs):
+  '''
+  Implement multi-result comparisons.
+  
+  1. Prefer an entry where the comicvine id matches
+  2. Prefer similar titles using Levenshtein ratio (if module available)
+  3. Penalise entries where the issue number is not in the title
+  4. Prefer matching authors (the more matches, the higher the preference)
+  '''
+  score = 0
+  if identifiers:
+    try:
+      if metadata.get_identifier('comicvine') == identifiers['comicvine']:
+        return 0
+    except (KeyError, AttributeError):
+      pass
+  if title:
+    score += score_title(metadata, title=title, **kwargs)
+  if authors:
+    for author in authors:
+      if author not in metadata.authors:
+        score += 10
+  return score
