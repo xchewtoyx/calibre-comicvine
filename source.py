@@ -62,9 +62,13 @@ class Comicvine(Source):
       log, result_queue, False, title=title, authors=authors, identifiers=ids)
     ranking = self.identify_results_keygen(title, authors, ids)
     for result in sorted(result_queue.queue, key=ranking):
+      if result.pubdate:
+        pubdate = str(result.pubdate.date())
+      else:
+        pubdate = 'Unknown'
       log.info('(%04d) - %s: %s [%s]' % (
           ranking(result), result.identifiers['comicvine'], 
-          result.title, result.pubdate.date()))
+          result.title, pubdate))
 
   def enqueue(self, log, result_queue, issue_id):
     'Add a result entry to the result queue'
