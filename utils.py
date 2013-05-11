@@ -26,9 +26,9 @@ class CalibreHandler(logging.Handler):
 
 def build_meta(log, issue_id):
   '''Build metadata record based on comicvine issue_id'''
-  issue = pycomicvine.Issue(issue_id, field_ids=[
+  issue = pycomicvine.Issue(issue_id, field_list=[
       'id', 'name', 'volume', 'issue_number', 'person_credits', 'description', 
-      'publisher', 'store_date', 'cover_date'])
+      'store_date', 'cover_date'])
   if not issue:
     log.warn('Unable to load Issue(%d)' % issue_id)
     return None
@@ -50,7 +50,8 @@ def find_volumes(volume_title, log):
   '''Look up volumes matching title string'''
   log.debug('Looking up volume: %s' % volume_title)
   candidate_volumes = pycomicvine.Volumes.search(
-    query=volume_title, field_list=['id', 'name', 'count_of_issues'])
+    query=volume_title, field_list=['id', 'name', 'count_of_issues', 
+                                    'publisher'])
   log.debug('found %d matches' % len(candidate_volumes))
   return candidate_volumes
 
@@ -66,7 +67,9 @@ def find_issues(candidate_volumes, issue_number, log):
     log.debug('Searching for Issues(%s)' % filter_string)
     candidate_issues = candidate_issues + list(
       pycomicvine.Issues(
-        filter=filter_string, field_ids=['id', 'volume', 'issue_number']))
+        filter=filter_string, field_list=[
+          'id', 'name', 'volume', 'issue_number', 'description', 
+          'store_date', 'cover_date']))
     log.debug('%d matches found' % len(candidate_issues))
   return candidate_issues
 
