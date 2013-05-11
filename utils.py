@@ -129,8 +129,10 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
   volume = '%s #%s' % (metadata.series.lower(), metadata.series_index)
   match_year = re.compile(r'\((\d{4})\)')
   year = match_year.search(title)
-  if year and metadata.pubdate:
-    score += abs(metadata.pubdate.year - int(year.group(1)))
+  if year:
+    title = match_year.sub('', title)
+    if metadata.pubdate:
+      score += abs(metadata.pubdate.year - int(year.group(1)))
   score += abs(len(volume) - len(title))
   for token in title_tokens:
     if token not in volume:
@@ -140,10 +142,10 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
       score += 100 - int(100 * similarity)
     except NameError:
       pass
-    if metadata.series_index != issue_number:
-      score += 20
-    if metadata.series_index not in title:
-      score += 10
+  if issue_number is not None and int(metadata.series_index) != issue_number:
+    score += 50
+  if metadata.series_index not in title:
+    score += 10
   return score
 
 def keygen(metadata, title=None, authors=None, identifiers=None, **kwargs):
