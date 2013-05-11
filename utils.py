@@ -29,7 +29,7 @@ def build_meta(log, issue_id):
   issue = pycomicvine.Issue(issue_id, field_list=[
       'id', 'name', 'volume', 'issue_number', 'person_credits', 'description', 
       'store_date', 'cover_date'])
-  if not issue:
+  if not issue or not issue.volume:
     log.warn('Unable to load Issue(%d)' % issue_id)
     return None
   title = '%s #%d' %  (issue.volume.name, issue.issue_number)
@@ -42,7 +42,8 @@ def build_meta(log, issue_id):
   meta.set_identifier('comicvine', str(issue.id))
   meta.comments = issue.description
   meta.has_cover = False
-  meta.publisher = issue.volume.publisher.name
+  if issue.volume.publisher:
+    meta.publisher = issue.volume.publisher.name
   meta.pubdate = issue.store_date or issue.cover_date
   return meta
 
