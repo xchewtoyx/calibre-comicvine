@@ -80,9 +80,13 @@ def normalised_title(query, title):
   provided after the issue number (e.g. a sub-title) will be
   ignored.
   '''
+  def strip_abbrev(match):
+    return match.string.replace('.', '')
   title_tokens = []
   issue_number = None
   volume = re.compile(r'^(?i)(v|vol)#?\d+$')
+  abbrev = re.compile(r'(?i)((?:(?:\w).){3,})')
+  title = abbrev.sub(strip_abbrev, title)
   for token in query.get_title_tokens(title):
     if volume.match(token):
       continue
