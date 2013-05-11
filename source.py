@@ -6,7 +6,9 @@ from functools import partial
 import logging
 from Queue import Queue
 
+from calibre import setup_cli_handlers
 from calibre.ebooks.metadata.sources.base import Source
+from calibre.utils.config import OptionParser
 import calibre.utils.logging as calibre_logging 
 from calibre_plugins.comicvine.config import PREFS
 from calibre_plugins.comicvine import utils
@@ -47,6 +49,29 @@ class Comicvine(Source):
     return bool(pycomicvine.api_key)
 
   def cli_main(self, args):
+    'Perform comicvine lookups from the calibre-debug cli'
+    def option_parser():
+      'Parse command line options'
+      parser = OptionParser(
+        usage='Comicvine [t:title] [a:authors] [i:id]')
+      parser.add_option('--verbose', '-v', default=False, 
+                        action='store_true', dest='verbose')
+      parser.add_option('--debug_api', default=False,
+                        action='store_true', dest='debug_api')
+      return parser
+
+    opts, args = option_parser().parse_args(args)
+    if opts.debug_api:
+      calibre_logging.default_log = calibre_logging.Log(
+        level=calibre_logging.DEBUG)
+    if opts.verbose:
+      level = 'DEBUG'
+    else:
+      level = 'INFO'
+    setup_cli_handlers(logging.getLogger('comicvine'), 
+                       getattr(logging, level))
+    log = calibre_logging.ThreadSafeLog(level=getattr(calibre_logging, level))
+
     (title, authors, ids) = (None, [], {})
     for arg in args:
       if arg.startswith('t:'):
@@ -57,7 +82,6 @@ class Comicvine(Source):
         (idtype, identifier) = arg.split(':', 2)[1:]
         ids[idtype] = int(identifier)
     result_queue = Queue()
-    log = calibre_logging.default_log
     self.identify(
       log, result_queue, False, title=title, authors=authors, identifiers=ids)
     ranking = self.identify_results_keygen(title, authors, ids)
