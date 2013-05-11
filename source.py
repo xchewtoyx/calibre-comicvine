@@ -20,7 +20,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 6, 2)
+  version = (0, 7, 0)
   #TODO(xchewtoyx): Implement cover capability
   capabilities = frozenset(['identify'])
   touched_fields = frozenset([
