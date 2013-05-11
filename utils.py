@@ -84,20 +84,20 @@ def normalised_title(query, title):
   ignored.
   '''
   def strip_abbrev(match):
-    return match.string.replace('.', '')
+    return match.group(0).replace('.', '')
   title_tokens = []
   issue_number = None
   volume = re.compile(r'^(?i)(v|vol)#?\d+$')
-  abbrev = re.compile(r'(?i)((?:(?:\w).){3,})')
+  abbrev = re.compile(r'((?:\w\.){3,})')
   title = abbrev.sub(strip_abbrev, title)
   for token in query.get_title_tokens(title):
     if volume.match(token):
       continue
     if token.startswith('#'):
       token = token.strip('#:')
-    if token.isdigit():
-      issue_number = int(token)
-      break # Stop processing at issue number
+      if token.isdigit():
+        issue_number = int(token)
+        break # Stop processing at issue number
     else:
       title_tokens.append(token.lower())
   return issue_number, title_tokens
