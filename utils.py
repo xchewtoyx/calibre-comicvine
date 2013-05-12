@@ -32,7 +32,7 @@ def build_meta(log, issue_id):
   if not issue or not issue.volume:
     log.warn('Unable to load Issue(%d)' % issue_id)
     return None
-  title = '%s #%d' %  (issue.volume.name, issue.issue_number)
+  title = '%s #%s' %  (issue.volume.name, issue.issue_number)
   if issue.name: 
     title = title + ': %s' % (issue.name)
   authors = [p.name for p in issue.person_credits]
@@ -62,7 +62,7 @@ def find_issues(candidate_volumes, issue_number, log):
   for volume in candidate_volumes:
     issue_filter = ['volume:%d' % volume.id]
     log.debug('checking candidate Volume(%s[%d])' % (volume.name, volume.id))
-    if issue_number:
+    if issue_number is not None:
       issue_filter.append('issue_number:%d' % issue_number)
     filter_string = ','.join(issue_filter)
     log.debug('Searching for Issues(%s)' % filter_string)
