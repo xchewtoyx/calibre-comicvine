@@ -89,7 +89,7 @@ def normalised_title(query, title):
   title_tokens = []
   issue_number = None
   volume = re.compile(r'^(?i)(v|vol)#?\d+$')
-  abbrev = re.compile(r'((?:\w\.){3,})')
+  abbrev = re.compile(r'((?:^|\s)(?:\w\.){2,})')
   title = abbrev.sub(strip_abbrev, title)
   for token in query.get_title_tokens(title):
     if volume.match(token):
