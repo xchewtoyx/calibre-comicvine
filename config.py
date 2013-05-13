@@ -2,11 +2,13 @@
 Configuration for the Comicvine metadata source
 '''
 from PyQt4.Qt import QWidget, QHBoxLayout, QLabel, QLineEdit
-from calibre_plugins.comicvine import pycomicvine
 from calibre.utils.config import JSONConfig
+
+import pycomicvine
 
 PREFS = JSONConfig('plugins/comicvine')
 PREFS.defaults['api_key'] = ''
+pycomicvine.api_key = PREFS['api_key']
 
 class ConfigWidget(QWidget):
   'Configuration widget'

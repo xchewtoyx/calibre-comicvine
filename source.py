@@ -13,14 +13,12 @@ import calibre.utils.logging as calibre_logging
 from calibre_plugins.comicvine.config import PREFS
 from calibre_plugins.comicvine import utils
 
-import pycomicvine
-
 class Comicvine(Source):
   ''' Metadata source implementation '''
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 7, 1)
+  version = (0, 7, 2)
   #TODO(xchewtoyx): Implement cover capability
   capabilities = frozenset(['identify'])
   touched_fields = frozenset([
@@ -35,7 +33,6 @@ class Comicvine(Source):
     self.logger = logging.getLogger('urls')
     self.logger.setLevel(logging.DEBUG)
     self.logger.addHandler(utils.CalibreHandler(logging.DEBUG))
-    pycomicvine.api_key = PREFS['api_key']
     Source.__init__(self, *args, **kwargs)
 
   def config_widget(self):
