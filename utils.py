@@ -133,6 +133,8 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
     title = match_year.sub('', title)
     if metadata.pubdate:
       score += abs(metadata.pubdate.year - int(year.group(1)))
+    else:
+      score += 10 # penalise entries with no publication date
   score += abs(len(volume) - len(title))
   for token in title_tokens:
     if token not in volume:
