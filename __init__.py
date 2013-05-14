@@ -1,8 +1,6 @@
 '''
 calibre_plugins.comicvine - A calibre metadata source for comicvine
 '''
-import pycomicvine
-
 from calibre_plugins.comicvine.source import Comicvine
 
 if __name__ == '__main__':

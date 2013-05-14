@@ -4,7 +4,10 @@ calibre_plugins.comicvine - A calibre metadata source for comicvine
 import logging
 import re
 
-import pycomicvine
+try:
+  import pycomicvine #pylint: disable=F0401
+except ImportError:
+  from calibre_plugins.comicvine import pycomicvine_dist as pycomicvine
 
 from calibre.ebooks.metadata.book.base import Metadata
 from calibre.utils import logging as calibre_logging # pylint: disable=W0404

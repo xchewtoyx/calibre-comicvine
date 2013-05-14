@@ -18,7 +18,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 7, 2)
+  version = (0, 7, 3)
   #TODO(xchewtoyx): Implement cover capability
   capabilities = frozenset(['identify'])
   touched_fields = frozenset([
@@ -43,7 +43,7 @@ class Comicvine(Source):
     config_widget.save_settings()
 
   def is_configured(self):
-    return bool(pycomicvine.api_key)
+    return bool(PREFS.get('api_key'))
 
   def cli_main(self, args):
     'Perform comicvine lookups from the calibre-debug cli'
