@@ -1,0 +1,1 @@
+../../../pycomicvine_dist.py
