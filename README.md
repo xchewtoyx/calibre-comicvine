@@ -58,8 +58,9 @@ or:
 
 ## Contribute 
 
-You can contribute by submitting issue tickets here on GitHub,
-including Pull Requests. You can test the comicvine plugin by calling:
+You can contribute by submitting issue tickets on GitHub
+(https://github.com/authmillenon/pycomicvine), including Pull
+Requests. You can test the comicvine plugin by calling:
 
     calibre-debug -e __init__.py
 
