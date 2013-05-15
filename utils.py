@@ -53,28 +53,27 @@ def build_meta(log, issue_id):
 def find_volumes(volume_title, log):
   '''Look up volumes matching title string'''
   log.debug('Looking up volume: %s' % volume_title)
-  candidate_volumes = pycomicvine.Volumes.search(
+  candidate_volumes = set(pycomicvine.Volumes.search(
     query=volume_title, field_list=['id', 'name', 'count_of_issues', 
-                                    'publisher'])
+                                    'publisher']))
   log.debug('found %d matches' % len(candidate_volumes))
   return candidate_volumes
 
 def find_issues(candidate_volumes, issue_number, log):
   '''Find issues in candidate volumes matching issue_number'''
   candidate_issues = []
-  for volume in candidate_volumes:
-    issue_filter = ['volume:%d' % volume.id]
-    log.debug('checking candidate Volume(%s[%d])' % (volume.name, volume.id))
-    if issue_number is not None:
-      issue_filter.append('issue_number:%d' % issue_number)
-    filter_string = ','.join(issue_filter)
-    log.debug('Searching for Issues(%s)' % filter_string)
-    candidate_issues = candidate_issues + list(
-      pycomicvine.Issues(
-        filter=filter_string, field_list=[
-          'id', 'name', 'volume', 'issue_number', 'description', 
-          'store_date', 'cover_date']))
-    log.debug('%d matches found' % len(candidate_issues))
+  issue_filter = ['volume:%s' % (
+      '|'.join(str(volume.id) for volume in candidate_volumes))]
+  if issue_number is not None:
+    issue_filter.append('issue_number:%d' % issue_number)
+  filter_string = ','.join(issue_filter)
+  log.debug('Searching for Issues(%s)' % filter_string)
+  candidate_issues = candidate_issues + list(
+    pycomicvine.Issues(
+      filter=filter_string, field_list=[
+        'id', 'name', 'volume', 'issue_number', 'description', 
+        'store_date', 'cover_date']))
+  log.debug('%d matches found' % len(candidate_issues))
   return candidate_issues
 
 def normalised_title(query, title):
