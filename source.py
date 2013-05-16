@@ -20,7 +20,7 @@ class Comicvine(Source):
   author = 'Russell Heilling'
   version = (0, 7, 4)
   #TODO(xchewtoyx): Implement cover capability
-  capabilities = frozenset(['identify'])
+  capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'identifier:comicvine', 'comments', 'publisher', 
       'pubdate', 'series'
@@ -142,4 +142,17 @@ class Comicvine(Source):
           self.enqueue(log, result_queue, issue.id)
 
     return None
+
+  def download_cover(self, log, result_queue, abort, 
+                     title=None, authors=None, identifiers=None, 
+                     timeout=30, get_best_cover=False):
+    if identifiers and 'comicvine' in identifiers:
+      for url in utils.cover_urls(identifiers['comicvine'], get_best_cover):
+        browser = self.browser
+        log('Downloading cover from:', url)
+        try:
+          cdata = browser.open_novisit(url, timeout=timeout).read()
+          result_queue.put((self, cdata))
+        except:
+          log.exception('Failed to download cover from:', url)
 

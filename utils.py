@@ -72,7 +72,7 @@ def find_issues(candidate_volumes, issue_number, log):
     pycomicvine.Issues(
       filter=filter_string, field_list=[
         'id', 'name', 'volume', 'issue_number', 'description', 
-        'store_date', 'cover_date']))
+        'store_date', 'cover_date', 'image']))
   log.debug('%d matches found' % len(candidate_issues))
   return candidate_issues
 
@@ -175,3 +175,13 @@ def keygen(metadata, title=None, authors=None, identifiers=None, **kwargs):
       if author not in metadata.authors:
         score += 10
   return score
+
+def cover_urls(comicvine_id, get_best_cover=False):
+  'Retrieve cover urls for comic in quality order'
+  issue = pycomicvine.Issue(int(comicvine_id), field_list=['image'])
+  for url in ['super_url', 'medium_url', 'small_url']:
+    if url in issue.image:
+      yield issue.image[url]
+      if get_best_cover:
+        break
+  
