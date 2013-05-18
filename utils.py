@@ -65,7 +65,7 @@ def find_issues(candidate_volumes, issue_number, log):
   issue_filter = ['volume:%s' % (
       '|'.join(str(volume.id) for volume in candidate_volumes))]
   if issue_number is not None:
-    issue_filter.append('issue_number:%d' % issue_number)
+    issue_filter.append('issue_number:%s' % issue_number)
   filter_string = ','.join(issue_filter)
   log.debug('Searching for Issues(%s)' % filter_string)
   candidate_issues = candidate_issues + list(
@@ -86,23 +86,25 @@ def normalised_title(query, title):
   provided after the issue number (e.g. a sub-title) will be
   ignored.
   '''
-  def strip_abbrev(match):
-    return match.group(0).replace('.', '')
   title_tokens = []
   issue_number = None
-  volume = re.compile(r'^(?i)(v|vol)#?\d+$')
-  abbrev = re.compile(r'((?:^|\s)(?:\w\.){2,})')
-  title = abbrev.sub(strip_abbrev, title)
+  replacements = (
+    (r'((?:^|\s)(?:\w\.){2,})', lambda match: match.group(0).replace('.', '')),
+    (r'\s\(?of \d+\)?', ''),
+    (r'(?:v|vol)\s?\d+', ''),
+    (r'\([^)]+\)', ''),
+    (u'(?:# ?)?0*([\d.\xbd]+):?[^\d]*$', '#\g<1>'),
+    (r'\s{2,}', ' '),
+  )
+  for pattern, replacement in replacements:
+    title = re.sub(pattern, replacement, title)
+  issue_pattern = re.compile('#(.*)$')
+  issue_match = issue_pattern.search(title)
+  if issue_match:
+    issue_number = issue_match.group(1)
+    title = issue_pattern.sub('', title)
   for token in query.get_title_tokens(title):
-    if volume.match(token):
-      continue
-    if token.startswith('#'):
-      token = token.strip('#:')
-      if token.isdigit():
-        issue_number = int(token)
-        break # Stop processing at issue number
-    else:
-      title_tokens.append(token.lower())
+    title_tokens.append(token.lower())
   return issue_number, title_tokens
 
 def find_title(query, title, log):
@@ -146,7 +148,7 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
       score += 100 - int(100 * similarity)
     except NameError:
       pass
-  if issue_number is not None and int(metadata.series_index) != issue_number:
+  if issue_number is not None and metadata.series_index != issue_number:
     score += 50
   if metadata.series_index not in title:
     score += 10
