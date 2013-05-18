@@ -19,7 +19,6 @@ class Comicvine(Source):
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
   version = (0, 8, 1)
-  #TODO(xchewtoyx): Implement cover capability
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'identifier:comicvine', 'comments', 'publisher', 
