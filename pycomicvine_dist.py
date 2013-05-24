@@ -22,7 +22,7 @@
 
 import urllib2
 from urllib import urlencode
-import simplejson as json
+import json
 import sys, re
 import datetime, logging
 import dateutil.parser
