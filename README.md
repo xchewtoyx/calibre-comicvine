@@ -8,9 +8,10 @@ Dependencies:
  * pycomicvine (https://github.com/authmillenon/pycomicvine)
  * Levenshtein (optional)
 
-For convenience, pycomicvine 0.9 is included in the distribution.
+For convenience, a modified version of pycomicvine 0.9 is included in
+the distribution to make sure there are no external dependencies.
 This will only be loaded if the module is not found elsewhere in the
-system path
+system path.
 
 Create a plugin zip file containing the files listed in MANIFEST and
 install.
