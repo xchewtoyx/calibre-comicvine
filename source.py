@@ -4,7 +4,9 @@ calibre_plugins.comicvine - A calibre metadata source for comicvine
 #pylint: disable-msg=R0913,R0904
 from functools import partial
 import logging
+from multiprocessing.pool import ThreadPool
 from Queue import Queue
+from thread import allocate_lock
 
 from calibre import setup_cli_handlers
 from calibre.ebooks.metadata.sources.base import Source
@@ -18,7 +20,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 8, 2)
+  version = (0, 9, 0)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'identifier:comicvine', 'comments', 'publisher', 
@@ -32,6 +34,7 @@ class Comicvine(Source):
     self.logger = logging.getLogger('urls')
     self.logger.setLevel(logging.DEBUG)
     self.logger.addHandler(utils.CalibreHandler(logging.DEBUG))
+    self._qlock = allocate_lock()
     Source.__init__(self, *args, **kwargs)
 
   def config_widget(self):
@@ -96,7 +99,9 @@ class Comicvine(Source):
     metadata = utils.build_meta(log, issue_id)
     if metadata:
       self.clean_downloaded_metadata(metadata)
+      self._qlock.acquire()
       result_queue.put(metadata)
+      self._qlock.release()
       log.debug('Added Issue(%s) to queue' % metadata.title)
 
   def identify_results_keygen(self, title=None, authors=None, 
@@ -131,14 +136,15 @@ class Comicvine(Source):
         candidate_volumes, issue_number, log)
 
       # Refine issue selection based on authors
-      for issue in candidate_issues:
-        if candidate_authors:
+      if candidate_authors:
+        for issue in candidate_issues:
           for author in candidate_authors:
-            if issue in author.issues:
-              self.enqueue(log, result_queue, issue.id)
+            if issue not in author.issues:
+              candidate_issues.remove(issue)
               break
-        else:
-          self.enqueue(log, result_queue, issue.id)
+      pool = ThreadPool(PREFS.get('worker_threads'))
+      enqueue = partial(self.enqueue, log, result_queue)
+      pool.map(enqueue, [issue.id for issue in candidate_issues])
 
     return None
 
