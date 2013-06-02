@@ -20,7 +20,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 9, 0)
+  version = (0, 9, 1)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'identifier:comicvine', 'comments', 'publisher', 
@@ -99,9 +99,8 @@ class Comicvine(Source):
     metadata = utils.build_meta(log, issue_id)
     if metadata:
       self.clean_downloaded_metadata(metadata)
-      self._qlock.acquire()
-      result_queue.put(metadata)
-      self._qlock.release()
+      with self._qlock:
+        result_queue.put(metadata)
       log.debug('Added Issue(%s) to queue' % metadata.title)
 
   def identify_results_keygen(self, title=None, authors=None, 
@@ -137,11 +136,12 @@ class Comicvine(Source):
 
       # Refine issue selection based on authors
       if candidate_authors:
-        for issue in candidate_issues:
-          for author in candidate_authors:
-            if issue not in author.issues:
-              candidate_issues.remove(issue)
-              break
+        issues = set()
+        for author in candidate_authors:
+          issues.update(set(author.issues))
+        candidate_issues = issues.intersection(candidate_issues)
+      
+      # Queue candidates
       pool = ThreadPool(PREFS.get('worker_threads'))
       enqueue = partial(self.enqueue, log, result_queue)
       pool.map(enqueue, [issue.id for issue in candidate_issues])
