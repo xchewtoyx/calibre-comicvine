@@ -28,15 +28,15 @@ class ConfigWidget(QWidget):
     self.key_msg = QLineEdit(self)
     self.key_msg.setText(PREFS['api_key'])
     self.layout.addWidget(self.key_msg)
-    self.label.setBuddy(self.key_msg)
+    self.key_label.setBuddy(self.key_msg)
 
     self.threads_label = QLabel('&worker_threads:')
     self.layout.addWidget(self.threads_label)
 
     self.threads_msg = QLineEdit(self)
-    self.threads_msg.setText(PREFS['worker_threads.'])
+    self.threads_msg.setText(unicode(PREFS['worker_threads']))
     self.layout.addWidget(self.threads_msg)
-    self.label.setBuddy(self.key_msg)
+    self.threads_label.setBuddy(self.threads_msg)
 
   def save_settings(self):
     'Apply new settings value'
