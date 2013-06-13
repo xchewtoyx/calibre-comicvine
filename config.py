@@ -1,7 +1,7 @@
 '''
 Configuration for the Comicvine metadata source
 '''
-from PyQt4.Qt import QWidget, QHBoxLayout, QLabel, QLineEdit
+from PyQt4.Qt import QWidget, QGridLayout, QLabel, QLineEdit
 from calibre.utils.config import JSONConfig
 
 try:
@@ -19,23 +19,22 @@ class ConfigWidget(QWidget):
   'Configuration widget'
   def __init__(self):
     QWidget.__init__(self)
-    self.layout = QHBoxLayout()
+    self.layout = QGridLayout()
+    self.layout.setSpacing(10)
     self.setLayout(self.layout)
 
     self.key_label = QLabel('&api key:')
-    self.layout.addWidget(self.key_label)
-
     self.key_msg = QLineEdit(self)
     self.key_msg.setText(PREFS['api_key'])
-    self.layout.addWidget(self.key_msg)
+    self.layout.addWidget(self.key_label, 1, 0)
+    self.layout.addWidget(self.key_msg, 1, 1)
     self.key_label.setBuddy(self.key_msg)
 
     self.threads_label = QLabel('&worker_threads:')
-    self.layout.addWidget(self.threads_label)
-
     self.threads_msg = QLineEdit(self)
     self.threads_msg.setText(unicode(PREFS['worker_threads']))
-    self.layout.addWidget(self.threads_msg)
+    self.layout.addWidget(self.threads_label, 2, 0)
+    self.layout.addWidget(self.threads_msg, 2, 1)
     self.threads_label.setBuddy(self.threads_msg)
 
   def save_settings(self):
