@@ -20,11 +20,11 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 9, 3)
+  version = (0, 10, 0)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
-      'title', 'authors', 'identifier:comicvine', 'comments', 'publisher', 
-      'pubdate', 'series'
+      'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
+      'identifiers:comicvine', 'identifiers:comicvine-volume',
       ])
                                
   has_html_comments = True

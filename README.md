@@ -57,6 +57,9 @@ or:
     $ calibre-debug -r Comicvine i:comicvine:41736
     Found: The Invisibles #15: She-Man, Part Three: Apocalipstick [1995-12-01 00:00:00]
 
+    $ calibre-debug -r Comicvine t:'Batman #12' i:comicvine-volume:42721
+    (0000) - 349621: Batman #12: Ghost in the Machine; [2012-08-08]
+
 ## Contribute 
 
 You can contribute by submitting issue tickets on GitHub
