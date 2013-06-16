@@ -43,6 +43,7 @@ def build_meta(log, issue_id):
   meta.series = issue.volume.name
   meta.series_index = str(issue.issue_number)
   meta.set_identifier('comicvine', str(issue.id))
+  meta.set_identifier('comicvine-volume', str(issue.volume.id))
   meta.comments = issue.description
   meta.has_cover = False
   if issue.volume.publisher:
@@ -50,13 +51,17 @@ def build_meta(log, issue_id):
   meta.pubdate = issue.store_date or issue.cover_date
   return meta
 
-def find_volumes(volume_title, log):
+def find_volumes(volume_title, log, volumeid=None):
   '''Look up volumes matching title string'''
-  log.debug('Looking up volume: %s' % volume_title)
-  candidate_volumes = set(pycomicvine.Volumes.search(
-    query=volume_title, field_list=['id', 'name', 'count_of_issues', 
-                                    'publisher']))
-  log.debug('found %d matches' % len(candidate_volumes))
+  if volumeid:
+    log.debug('Looking up volume: %d' % volumeid)
+    candidate_volumes = [pycomicvine.Volume(volumeid)]
+  else:
+    log.debug('Looking up volume: %s' % volume_title)
+    candidate_volumes = set(pycomicvine.Volumes.search(
+        query=volume_title, field_list=['id', 'name', 'count_of_issues', 
+                                        'publisher']))
+  log.debug('found %d volume matches' % len(candidate_volumes))
   return candidate_volumes
 
 def find_issues(candidate_volumes, issue_number, log):
@@ -107,10 +112,10 @@ def normalised_title(query, title):
     title_tokens.append(token.lower())
   return issue_number, title_tokens
 
-def find_title(query, title, log):
+def find_title(query, title, log, volumeid=None):
   '''Extract volume name and issue number from issue title'''
   (issue_number, title_tokens) = normalised_title(query, title)
-  candidate_volumes = find_volumes(' '.join(title_tokens), log)
+  candidate_volumes = find_volumes(' '.join(title_tokens), log, volumeid)
   return (issue_number, candidate_volumes)
 
 def find_authors(query, authors, log):

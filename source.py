@@ -118,6 +118,7 @@ class Comicvine(Source):
     # Do a simple lookup if comicvine identifier present
     if identifiers:
       comicvine_id = int(identifiers.get('comicvine'))
+      volume_id = int(identifiers.get('comicvine-volume'))
       if comicvine_id is not None:
         log.debug('Looking up Issue(%d)' % comicvine_id)
         self.enqueue(log, result_queue, comicvine_id)
@@ -125,7 +126,8 @@ class Comicvine(Source):
 
     if title:
       # Look up candidate volumes based on title
-      (issue_number, candidate_volumes) = utils.find_title(self, title, log)
+      (issue_number, candidate_volumes) = utils.find_title(
+        self, title, log, volume_id)
 
       # Look up candidate authors
       candidate_authors = utils.find_authors(self, authors, log)
