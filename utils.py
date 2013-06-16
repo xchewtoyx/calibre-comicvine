@@ -115,6 +115,8 @@ def normalised_title(query, title):
 def find_title(query, title, log, volumeid=None):
   '''Extract volume name and issue number from issue title'''
   (issue_number, title_tokens) = normalised_title(query, title)
+  if volumeid:
+    volumeid = int(volumeid)
   candidate_volumes = find_volumes(' '.join(title_tokens), log, volumeid)
   return (issue_number, candidate_volumes)
 
