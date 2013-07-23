@@ -162,6 +162,7 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
     score += 10
   # De-preference TPBs by looking for the phrases "collecting issues", 
   # "containing issues", etc. in the comments
+  # TODO(rgh): This should really be controlled by config
   collection = re.compile(r'(?:collect|contain)(?:s|ing) issues')
   if metadata.comments and collection.search(metadata.comments.lower()):
     score += 50
