@@ -98,12 +98,12 @@ def normalised_title(query, title):
     (r'\s\(?of \d+\)?', ''),
     (r'(?:v|vol)\s?\d+', ''),
     (r'\([^)]+\)', ''),
-    (u'(?:# ?)?0*([\d.\xbd]+):?[^\d]*$', '#\g<1>'),
+    (u'(?:# ?)?0*([\d\xbd]+[^:\s]*):?[^\d]*$', '#\g<1>'),
     (r'\s{2,}', ' '),
   )
   for pattern, replacement in replacements:
     title = re.sub(pattern, replacement, title)
-  issue_pattern = re.compile('#(.*)$')
+  issue_pattern = re.compile('#([^:\s]+)')
   issue_match = issue_pattern.search(title)
   if issue_match:
     issue_number = issue_match.group(1)
@@ -115,6 +115,7 @@ def normalised_title(query, title):
 def find_title(query, title, log, volumeid=None):
   '''Extract volume name and issue number from issue title'''
   (issue_number, title_tokens) = normalised_title(query, title)
+  log.debug("Searching for %s #%s" % (title_tokens, issue_number))
   if volumeid:
     volumeid = int(volumeid)
   candidate_volumes = find_volumes(' '.join(title_tokens), log, volumeid)
@@ -159,6 +160,12 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
     score += 50
   if metadata.series_index not in title:
     score += 10
+  # De-preference TPBs by looking for the phrases "collecting issues", 
+  # "containing issues", etc. in the comments
+  collection = re.compile(r'(?:collect|contain)(?:s|ing) issues')
+  if metadata.comments and collection.search(metadata.comments.lower()):
+    score += 50
+
   return score
 
 def keygen(metadata, title=None, authors=None, identifiers=None, **kwargs):
