@@ -53,14 +53,21 @@ def build_meta(log, issue_id):
 
 def find_volumes(volume_title, log, volumeid=None):
   '''Look up volumes matching title string'''
+  candidate_volumes = []
   if volumeid:
     log.debug('Looking up volume: %d' % volumeid)
     candidate_volumes = [pycomicvine.Volume(volumeid)]
   else:
     log.debug('Looking up volume: %s' % volume_title)
-    candidate_volumes = set(pycomicvine.Volumes.search(
+    matches = pycomicvine.Volumes.search(
         query=volume_title, field_list=['id', 'name', 'count_of_issues', 
-                                        'publisher']))
+                                        'publisher'])
+    for i in range(len(matches)):
+      try:
+        if matches[i]:
+          candidate_volumes.append(matches[i])
+      except IndexError:
+        continue 
   log.debug('found %d volume matches' % len(candidate_volumes))
   return candidate_volumes
 
