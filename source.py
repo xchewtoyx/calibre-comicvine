@@ -9,6 +9,7 @@ from Queue import Queue
 from thread import allocate_lock
 
 from calibre import setup_cli_handlers
+from calibre.ebooks.metadata.opf2 import metadata_to_opf
 from calibre.ebooks.metadata.sources.base import Source
 from calibre.utils.config import OptionParser
 import calibre.utils.logging as calibre_logging 
@@ -20,7 +21,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 10, 2)
+  version = (0, 10, 3)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
@@ -46,6 +47,20 @@ class Comicvine(Source):
 
   def is_configured(self):
     return bool(PREFS.get('api_key'))
+  
+  def _print_result(self, result, ranking, opf=False):
+    if opf:
+      result_text = metadata_to_opf(result)
+    else:
+      if result.pubdate:
+        pubdate = str(result.pubdate.date())
+      else:
+        pubdate = 'Unknown'
+      result_text = '(%04d) - %s: %s [%s]' % (
+        ranking(result), result.identifiers['comicvine'], 
+        result.title, pubdate)
+    print result_text
+
 
   def cli_main(self, args):
     'Perform comicvine lookups from the calibre-debug cli'
@@ -53,6 +68,7 @@ class Comicvine(Source):
       'Parse command line options'
       parser = OptionParser(
         usage='Comicvine [t:title] [a:authors] [i:id]')
+      parser.add_option('--opf', '-o', action='store_true', dest='opf')
       parser.add_option('--verbose', '-v', default=False, 
                         action='store_true', dest='verbose')
       parser.add_option('--debug_api', default=False,
@@ -85,13 +101,9 @@ class Comicvine(Source):
       log, result_queue, False, title=title, authors=authors, identifiers=ids)
     ranking = self.identify_results_keygen(title, authors, ids)
     for result in sorted(result_queue.queue, key=ranking):
-      if result.pubdate:
-        pubdate = str(result.pubdate.date())
-      else:
-        pubdate = 'Unknown'
-      log.info('(%04d) - %s: %s [%s]' % (
-          ranking(result), result.identifiers['comicvine'], 
-          result.title, pubdate))
+      self._print_result(result, ranking, opf=opts.opf)
+      if opts.opf:
+        break
 
   def enqueue(self, log, result_queue, issue_id):
     'Add a result entry to the result queue'
