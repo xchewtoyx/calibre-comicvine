@@ -2,7 +2,9 @@
 calibre_plugins.comicvine - A calibre metadata source for comicvine
 '''
 import logging
+import random
 import re
+import time
 
 try:
   import pycomicvine #pylint: disable=F0401
@@ -27,6 +29,37 @@ class CalibreHandler(logging.Handler):
     level = getattr(calibre_logging, record.levelname)
     calibre_logging.default_log.prints(level, record.getMessage())
 
+def retry_on_cv_error(retries=2):
+  '''Decorator for functions that access the comicvine api. 
+
+  Retries the decorated function on error.'''
+  def wrap_function(target_function):
+    'Closure for the retry function giving access to decorator arguments.'
+    def retry_function(*args, **kwargs):
+      '''Decorate function to retry on error.
+
+      The comicvine API can be a little flaky, so retry on error to make
+      sure the error is real.
+
+      If retries is exceeded will raise the original exception.
+      '''
+      for retry in range(1,retries+1):
+        try:
+          return target_function(*args, **kwargs)
+        except:
+          logging.warn('Calling %r failed on attempt %d/%d with args: %r %r',
+                       target, retry, retries, args, kwargs)
+          if retry == retries:
+            raise
+          # Failures may be due to busy servers.  Be a good citizen and
+          # back off for 100-600 ms before retrying.
+          time.sleep(random.random()/2 + 0.1)
+        else:
+          break
+    return retry_function
+  return wrap_function
+
+@retry_on_cv_error()
 def build_meta(log, issue_id):
   '''Build metadata record based on comicvine issue_id'''
   issue = pycomicvine.Issue(issue_id, field_list=[
@@ -51,6 +84,7 @@ def build_meta(log, issue_id):
   meta.pubdate = issue.store_date or issue.cover_date
   return meta
 
+@retry_on_cv_error()
 def find_volumes(volume_title, log, volumeid=None):
   '''Look up volumes matching title string'''
   candidate_volumes = []
@@ -71,6 +105,7 @@ def find_volumes(volume_title, log, volumeid=None):
   log.debug('found %d volume matches' % len(candidate_volumes))
   return candidate_volumes
 
+@retry_on_cv_error()
 def find_issues(candidate_volumes, issue_number, log):
   '''Find issues in candidate volumes matching issue_number'''
   candidate_issues = []
@@ -128,6 +163,7 @@ def find_title(query, title, log, volumeid=None):
   candidate_volumes = find_volumes(' '.join(title_tokens), log, volumeid)
   return (issue_number, candidate_volumes)
 
+@retry_on_cv_error()
 def find_authors(query, authors, log):
   '''Find people matching author string'''
   candidate_authors = []
@@ -200,6 +236,9 @@ def keygen(metadata, title=None, authors=None, identifiers=None, **kwargs):
         score += 10
   return score
 
+# Do not include the retry decorator for generator, as exceptions in
+# generators are always fatal.  Functions that use this should be
+# decorated instead.
 def cover_urls(comicvine_id, get_best_cover=False):
   'Retrieve cover urls for comic in quality order'
   issue = pycomicvine.Issue(int(comicvine_id), field_list=['image'])
