@@ -48,7 +48,7 @@ def retry_on_cv_error(retries=2):
           return target_function(*args, **kwargs)
         except:
           logging.warn('Calling %r failed on attempt %d/%d with args: %r %r',
-                       target, retry, retries, args, kwargs)
+                       target_function, retry, retries, args, kwargs)
           if retry == retries:
             raise
           # Failures may be due to busy servers.  Be a good citizen and
