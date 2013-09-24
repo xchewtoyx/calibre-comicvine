@@ -900,14 +900,17 @@ class Types(_ListResource):
             super(Types, self).__init__()
             self._mapping = {}
             for type in self:
+              try:
                 type['singular_resource_class'] = getattr(
                         sys.modules[__name__],
                         Types._camilify_type_name(
                                 type['detail_resource_name']
                             )
                     )
-                self._mapping[type['detail_resource_name']] = type
-                self._mapping[type['list_resource_name']] = type
+              except AttributeError:
+                continue
+              self._mapping[type['detail_resource_name']] = type
+              self._mapping[type['list_resource_name']] = type
             self._ready = True
 
     def __getitem__(self, key):
