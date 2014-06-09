@@ -21,7 +21,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling'
-  version = (0, 10, 4)
+  version = (0, 10, 6)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
@@ -166,6 +166,7 @@ class Comicvine(Source):
                      timeout=30, get_best_cover=False):
     if identifiers and 'comicvine' in identifiers:
       for url in utils.cover_urls(identifiers['comicvine'], get_best_cover):
+        url = 'http://static.comicvine.com' + url
         browser = self.browser
         log('Downloading cover from:', url)
         try:
