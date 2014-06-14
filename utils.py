@@ -6,10 +6,8 @@ import random
 import re
 import time
 
-try:
-  import pycomicvine #pylint: disable=F0401
-except ImportError:
-  from calibre_plugins.comicvine import pycomicvine_dist as pycomicvine
+import pycomicvine
+from pycomicvine.error import RateLimitExceededError
 
 from calibre.ebooks.metadata.book.base import Metadata
 from calibre.utils import logging as calibre_logging # pylint: disable=W0404
@@ -46,6 +44,9 @@ def retry_on_cv_error(retries=2):
       for retry in range(1,retries+1):
         try:
           return target_function(*args, **kwargs)
+        except RateLimitExceededError:
+          logging.warn('API Rate limited exceeded.')
+          raise
         except:
           logging.warn('Calling %r failed on attempt %d/%d with args: %r %r',
                        target_function, retry, retries, args, kwargs)
@@ -69,7 +70,7 @@ def build_meta(log, issue_id):
     log.warn('Unable to load Issue(%d)' % issue_id)
     return None
   title = '%s #%s' %  (issue.volume.name, issue.issue_number)
-  if issue.name: 
+  if issue.name:
     title = title + ': %s' % (issue.name)
   authors = [p.name for p in issue.person_credits]
   meta = Metadata(title, authors)

@@ -22,10 +22,15 @@
 
 import urllib2
 from urllib import urlencode
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import sys, re
 import datetime, logging
 import dateutil.parser
+import pycomicvine.error
+import collections
 
 _API_URL = "https://www.comicvine.com/api/"
 
@@ -33,53 +38,15 @@ _cached_resources = {}
 
 api_key = ""
 
-class InvalidResourceError(Exception):
-    pass
+def str_to_datetime(value):
+    try:
+        return dateutil.parser.parse(value)
+    except ValueError:
+        return value
 
-class InvalidAPIKeyError(Exception):
-    pass
-
-class ObjectNotFoundError(Exception):
-    pass
-
-class ErrorInURLFormatError(Exception):
-    pass
-
-class JSONError(Exception):
-    pass
-
-class FilterError(Exception):
-    pass
-
-class SubscriberOnlyError(Exception):
-    pass
-
-class UnknownStatusError(Exception):
-    pass
-
-class IllegalArquementException(Exception):
-    pass
-
-class NotConvertableError(Exception):
-    pass
-
-_EXCEPTIONS = {
-        100: InvalidAPIKeyError,
-        101: ObjectNotFoundError,
-        102: ErrorInURLFormatError,
-        103: JSONError,
-        104: FilterError,
-        105: SubscriberOnlyError,
-    }
 
 class AttributeDefinition(object):
     def __init__(self, target, start_type = None):
-        def _to_datetime(value):
-            try:
-                return dateutil.parser.parse(value)
-            except ValueError:
-                return value
-
         def _to_int(value):
             try:
                 new_value = value.replace(',','')
@@ -89,14 +56,16 @@ class AttributeDefinition(object):
 
         self._start_type = start_type
         if target == datetime.datetime or target == 'datetime':
-            self._target = _to_datetime
+            self._target = str_to_datetime
             self._target_name = 'datetime'
         elif target == int or target == 'int':
             self._target = _to_int
             self._target_name = 'int'
         elif callable(target):
-            if not isinstance(start_type, type):
-                raise IllegalArquementException(
+            if not isinstance(start_type, type) and \
+                not (isinstance(start_type, collections.Iterable) and
+                     all(isinstance(t, type) for t in start_type)):
+                raise pycomicvine.error.IllegalArquementException(
                         "A start type needs to be defined"
                     )
             self._target = target
@@ -132,7 +101,7 @@ class AttributeDefinition(object):
                 else:
                     return value
             else:
-                raise NotConvertableError(
+                raise pycomicvine.error.NotConvertableError(
                         "Error in convertion '"+str(value)+"' => "+\
                         self._target_name
                     )
@@ -178,7 +147,7 @@ class _Resource(object):
     def _request(type, baseurl, **params):
         if 'api_key' not in params:
             if len(api_key) == 0:
-                raise InvalidAPIKeyError(
+                raise pycomicvine.error.InvalidAPIKeyError(
                         "Invalid API Key"
                     )
             params['api_key'] = api_key
@@ -189,7 +158,7 @@ class _Resource(object):
                     for field_name in params['field_list']:
                         field_list += str(field_name)+","
                 except TypeError, e:
-                    raise IllegalArquementException(
+                    raise pycomicvine.error.IllegalArquementException(
                             "'field_list' must be iterable"
                         )
                 params['field_list'] = field_list
@@ -202,10 +171,13 @@ class _Resource(object):
             if timeout != None:
                 timeout = int(params['timeout'])
             del params['timeout']
+        if 'pre_fetch_hook' in params:
+            params['pre_fetch_hook']()
+            del params['pre_fetch_hook']
         params['format'] = 'json'
         params = urlencode(params)
         url = baseurl+"?"+params
-        logging.getLogger("urls").debug("Calling "+url)
+        logging.getLogger(__name__).debug("Calling "+url)
         if timeout == None:
             response_raw = json.loads(urllib2.urlopen(url).read())
         else:
@@ -215,9 +187,10 @@ class _Resource(object):
                 ).read())
         response = type._Response(**response_raw)
         if response.status_code != 1:
-            raise _EXCEPTIONS.get(response.status_code,UnknownStatusError)(
-                    response.error
-                )
+            raise pycomicvine.error.EXCEPTION_MAPPING.get(
+                    response.status_code,
+                    pycomicvine.error.UnknownStatusError
+                )(response.error)
         if 'aliases' in response.results and \
                 isinstance(response.results['aliases'], basestring):
             response.results['aliases'] = response.results[
@@ -241,7 +214,9 @@ class _SingularResource(_Resource):
         try:
             type_id = Types()[resource_type]['id']
         except KeyError:
-            return InvalidResourceError(resource_type)
+            return pycomicvine.error.InvalidResourceError(
+                    resource_type
+                )
         type._ensure_resource_url()
         key = "{0:d}-{1:d}".format(type_id, id)
         obj = _cached_resources.get(key)
@@ -263,9 +238,9 @@ class _SingularResource(_Resource):
             try:
                 type_id = Types()[type(self)]['id']
             except KeyError:
-                raise InvalidResourceError(
+                raise pycomicvine.error.InvalidResourceError(
                         "Resource type '{0!s}' does not exist.".format(
-                                resource_type
+                                type(self)
                             )
                     )
             self._detail_url = type(self)._resource_url + \
@@ -346,7 +321,13 @@ class _SingularResource(_Resource):
         return name
 
     def __str__(self):
-        return str(unicode(self))
+        if 'name' in self._fields:
+            return str(self.name.encode(
+                    'ascii',
+                    'backslashreplace'
+                )) + " ["+str(self.id)+"]"
+        else:
+            return "["+str(self.id)+"]"
 
     def __unicode__(self):
         if 'name' in self._fields:
@@ -364,6 +345,13 @@ class _SingularResource(_Resource):
 class _ListResource(_Resource):
     def _request_object(self, **params):
         type(self)._ensure_resource_url()
+        if isinstance(self, Search):
+            if 'offset' in params:
+                limit = params['limit'] or self._limit
+                params['page'] = params['offset']/params['limit'] + 1
+                del params['offset']
+            elif 'page' not in params:
+                params['page'] = 1
         return type(self)._request(type(self)._resource_url, **params)
 
     def __init__(self, init_list = None, **kwargs):
@@ -391,7 +379,7 @@ class _ListResource(_Resource):
         return self._total
 
     def __getitem__(self, index):
-        if type(index) == slice:
+        if isinstance(index, slice):
             start = index.start or 0
             stop = index.stop or self._total
             step = index.step or 1
@@ -410,24 +398,36 @@ class _ListResource(_Resource):
                         offset=i,
                         **self._args
                     )
-                for j in range(
-                        len(self._results),
-                        i+response.number_of_page_results
-                    ):
-                    self._results.append(None)
-                for j in range(i, i+response.number_of_page_results):
-                    self._results[j] = response.results[j-i]                   
-        if type(self._results[index]) == list:
-            if type(index) != slice and len(self._results[index]) == 0:
+                if response.number_of_page_results != len(response.results):
+                    logging.getLogger(__name__).warning("number of page results wrong (%d != %d) ",
+                            response.number_of_page_results, len(response.results))
+                if isinstance(self, Search):
+                    end_result = response.offset + response.number_of_page_results
+                    if len(self._results) < end_result:
+                        self._results.extend(
+                            [None] * (end_result - len(self._results)))
+                    for j in range(response.offset, 
+                                   response.offset+len(response.results)):
+                            self._results[j] = response.results[j-response.offset]
+                else:
+                    for j in range(
+                            len(self._results),
+                            i+response.number_of_page_results
+                        ):
+                        self._results.append(None)
+                    for j in range(i, i+response.number_of_page_results):
+                        self._results[j] = response.results[j-i]         
+        if isinstance(self._results[index], list):
+            if not isinstance(index, slice) and len(self._results[index]) == 0:
                 self._results[index] = None
                 return None
             for i in range(start, stop, step):
-                if type(self._results[i]) == dict:
+                if isinstance(self._results[i], dict):
                     self._parse_result(i)
-                elif type(self._results[i]) == list and \
+                elif isinstance(self._results[i], list) and \
                         len(self._results[i]) == 0:
                     self._results[i] = None
-        elif type(self._results[index]) == dict:
+        elif isinstance(self._results[index], dict):
             self._parse_result(index)
         return self._results[index]
 
@@ -459,7 +459,7 @@ class _ListResource(_Resource):
     def _parse_result(self, index):
         if type(self) != Types:
             type_dict = Types()
-            if type(self) == Search:
+            if isinstance(self, Search):
                 self._results[index] = type_dict[
                         self._results[index]['resource_type']
                     ]['singular_resource_class'](
@@ -482,7 +482,7 @@ class _SortableListResource(_ListResource):
                     sort = str(sort[0])+":"+str(sort[1])
                 except KeyError:
                     if 'field' not in sort:
-                        raise IllegalArquementException(
+                        raise pycomicvine.error.IllegalArquementException(
                                 "Argument 'sort' must contain item 'field'"
                             )
                     if 'direction' in sort:
@@ -681,9 +681,15 @@ class Movie(_SingularResource):
     locations = AttributeDefinition('Locations')
     name = AttributeDefinition('keep')
     producers = AttributeDefinition('People')
-    rating = AttributeDefinition(int)
+    rating = AttributeDefinition('keep')
     release_date = AttributeDefinition(datetime.datetime)
-    runtime = AttributeDefinition(int)
+    runtime = AttributeDefinition(
+            lambda value:   int(str(value).split(':'))[0] * 60 + \
+                            int(str(value).split(':')[1]) \
+                                if ':' in str(value) \
+                                else int(value),
+            basestring
+        )
     site_detail_url = AttributeDefinition('keep')
     studios = AttributeDefinition('keep')
     teams = AttributeDefinition('Teams')
@@ -743,7 +749,12 @@ class Person(_SingularResource):
     created_characters = AttributeDefinition('Characters')
     date_added = AttributeDefinition(datetime.datetime)
     date_last_updated = AttributeDefinition(datetime.datetime)
-    death = AttributeDefinition(datetime.datetime)
+    death = AttributeDefinition(
+            lambda value:   str_to_datetime(value.get('date')) if 
+                                isinstance(value, dict) else
+                            str_to_datetime(value),
+            (dict, basestring)
+        )
     deck = AttributeDefinition('keep')
     description = AttributeDefinition('keep')
     email = AttributeDefinition('keep')
@@ -757,7 +768,6 @@ class Person(_SingularResource):
     image = AttributeDefinition('keep')
     issues = AttributeDefinition('Issues')
     name = AttributeDefinition('keep')
-    role = AttributeDefinition('keep')
     site_detail_url = AttributeDefinition('keep')
     story_arc_credits = AttributeDefinition('StoryArcs')
     volume_credits = AttributeDefinition('Volumes')
@@ -900,17 +910,14 @@ class Types(_ListResource):
             super(Types, self).__init__()
             self._mapping = {}
             for type in self:
-              try:
                 type['singular_resource_class'] = getattr(
                         sys.modules[__name__],
                         Types._camilify_type_name(
-                                type['detail_resource_name']
-                            )
+                                type['detail_resource_name']),
+                        UnknownResource
                     )
-              except AttributeError:
-                continue
-              self._mapping[type['detail_resource_name']] = type
-              self._mapping[type['list_resource_name']] = type
+                self._mapping[type['detail_resource_name']] = type
+                self._mapping[type['list_resource_name']] = type
             self._ready = True
 
     def __getitem__(self, key):
@@ -939,6 +946,9 @@ class Types(_ListResource):
             else:
                 camel_string += c
         return camel_string
+
+class UnknownResource(_Resource):
+    pass
 
 class Video(_SingularResource):
     api_detail_url = AttributeDefinition('keep')
