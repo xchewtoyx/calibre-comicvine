@@ -5,4 +5,5 @@ __init__.py
 config.py
 source.py
 utils.py
-pycomicvine_dist.py
+pycomicvine/__init__.py
+pycomicvine/error.py

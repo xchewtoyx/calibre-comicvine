@@ -5,12 +5,14 @@ import logging
 import random
 import re
 import time
-
-import pycomicvine
-from pycomicvine.error import RateLimitExceededError
+import threading
 
 from calibre.ebooks.metadata.book.base import Metadata
 from calibre.utils import logging as calibre_logging # pylint: disable=W0404
+from calibre.utils.config import JSONConfig
+from calibre_plugins.comicvine import pycomicvine
+from calibre_plugins.comicvine.config import PREFS
+from pycomicvine.error import RateLimitExceededError
 
 # Optional Import for fuzzy title matching
 try:
@@ -26,6 +28,45 @@ class CalibreHandler(logging.Handler):
   def emit(self, record):
     level = getattr(calibre_logging, record.levelname)
     calibre_logging.default_log.prints(level, record.getMessage())
+
+class TokenBucket(object):
+  def __init__(self):
+    self.lock = threading.RLock()
+    params = JSONConfig('plugins/comicvine_tokens')
+    params.defaults['tokens'] = 0
+    params.defaults['update'] = time.time()
+    self.params = params
+
+  def consume(self):
+    with self.lock:
+      self.params.refresh()
+      rate = PREFS['requests_rate']
+      while self.tokens < 1:
+        if self.params['update'] + 1/rate > time.time():
+          next_token = self.params['update'] + 1/rate - time.time()
+        else:
+          next_token = 1/rate
+        logging.warn(
+            'Slow down cowboy: %0.2f seconds to next token', next_token)
+        time.sleep(next_token)
+      self.params['tokens'] -= 1
+
+  @property
+  def tokens(self):
+    with self.lock:
+      self.params.refresh()
+      if self.params['tokens'] < PREFS['requests_burst']:
+        now = time.time()
+        elapsed = now - self.params['update']
+        if elapsed > 0:
+          new_tokens = int(elapsed * PREFS['requests_rate'])
+          if new_tokens:
+            if new_tokens + self.params['tokens'] < PREFS['requests_burst']:
+              self.params['tokens'] += new_tokens
+            else:
+              self.params['tokens'] = PREFS['requests_burst']
+            self.params['update'] = now
+    return self.params['tokens']
 
 def retry_on_cv_error(retries=2):
   '''Decorator for functions that access the comicvine api. 

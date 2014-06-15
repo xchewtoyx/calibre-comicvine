@@ -29,12 +29,13 @@ except ImportError:
 import sys, re
 import datetime, logging
 import dateutil.parser
-import pycomicvine.error
+from . import error
 import collections
 
 _API_URL = "https://www.comicvine.com/api/"
 
 _cached_resources = {}
+_api_hooks = {}
 
 api_key = ""
 
@@ -44,6 +45,17 @@ def str_to_datetime(value):
     except ValueError:
         return value
 
+def hook_register(hook_name, callback):
+    if callable(callback):
+        _api_hooks[hook_name] = callback
+    else:
+        raise error.IllegalArquementException(
+            "Hook callbacks must be callable"
+        )
+
+def hook_run(hook_name, *args, **kwargs):
+    if callable(_api_hooks.get(hook_name)):
+        _api_hooks[hook_name](*args, **kwargs)
 
 class AttributeDefinition(object):
     def __init__(self, target, start_type = None):
@@ -65,7 +77,7 @@ class AttributeDefinition(object):
             if not isinstance(start_type, type) and \
                 not (isinstance(start_type, collections.Iterable) and
                      all(isinstance(t, type) for t in start_type)):
-                raise pycomicvine.error.IllegalArquementException(
+                raise error.IllegalArquementException(
                         "A start type needs to be defined"
                     )
             self._target = target
@@ -101,7 +113,7 @@ class AttributeDefinition(object):
                 else:
                     return value
             else:
-                raise pycomicvine.error.NotConvertableError(
+                raise error.NotConvertableError(
                         "Error in convertion '"+str(value)+"' => "+\
                         self._target_name
                     )
@@ -147,7 +159,7 @@ class _Resource(object):
     def _request(type, baseurl, **params):
         if 'api_key' not in params:
             if len(api_key) == 0:
-                raise pycomicvine.error.InvalidAPIKeyError(
+                raise error.InvalidAPIKeyError(
                         "Invalid API Key"
                     )
             params['api_key'] = api_key
@@ -158,7 +170,7 @@ class _Resource(object):
                     for field_name in params['field_list']:
                         field_list += str(field_name)+","
                 except TypeError, e:
-                    raise pycomicvine.error.IllegalArquementException(
+                    raise error.IllegalArquementException(
                             "'field_list' must be iterable"
                         )
                 params['field_list'] = field_list
@@ -171,12 +183,10 @@ class _Resource(object):
             if timeout != None:
                 timeout = int(params['timeout'])
             del params['timeout']
-        if 'pre_fetch_hook' in params:
-            params['pre_fetch_hook']()
-            del params['pre_fetch_hook']
         params['format'] = 'json'
         params = urlencode(params)
         url = baseurl+"?"+params
+        hook_run('pre_request_hook')
         logging.getLogger(__name__).debug("Calling "+url)
         if timeout == None:
             response_raw = json.loads(urllib2.urlopen(url).read())
@@ -187,9 +197,9 @@ class _Resource(object):
                 ).read())
         response = type._Response(**response_raw)
         if response.status_code != 1:
-            raise pycomicvine.error.EXCEPTION_MAPPING.get(
+            raise error.EXCEPTION_MAPPING.get(
                     response.status_code,
-                    pycomicvine.error.UnknownStatusError
+                    error.UnknownStatusError
                 )(response.error)
         if 'aliases' in response.results and \
                 isinstance(response.results['aliases'], basestring):
@@ -214,7 +224,7 @@ class _SingularResource(_Resource):
         try:
             type_id = Types()[resource_type]['id']
         except KeyError:
-            return pycomicvine.error.InvalidResourceError(
+            return error.InvalidResourceError(
                     resource_type
                 )
         type._ensure_resource_url()
@@ -238,7 +248,7 @@ class _SingularResource(_Resource):
             try:
                 type_id = Types()[type(self)]['id']
             except KeyError:
-                raise pycomicvine.error.InvalidResourceError(
+                raise error.InvalidResourceError(
                         "Resource type '{0!s}' does not exist.".format(
                                 type(self)
                             )
@@ -482,7 +492,7 @@ class _SortableListResource(_ListResource):
                     sort = str(sort[0])+":"+str(sort[1])
                 except KeyError:
                     if 'field' not in sort:
-                        raise pycomicvine.error.IllegalArquementException(
+                        raise error.IllegalArquementException(
                                 "Argument 'sort' must contain item 'field'"
                             )
                     if 'direction' in sort:
