@@ -6,13 +6,13 @@ from functools import partial
 import logging
 from multiprocessing.pool import ThreadPool
 from Queue import Queue
-from thread import allocate_lock
+import threading
 
 from calibre import setup_cli_handlers
 from calibre.ebooks.metadata.opf2 import metadata_to_opf
 from calibre.ebooks.metadata.sources.base import Source
 from calibre.utils.config import OptionParser
-import calibre.utils.logging as calibre_logging 
+import calibre.utils.logging as calibre_logging
 from calibre_plugins.comicvine import pycomicvine
 from calibre_plugins.comicvine.config import PREFS
 from calibre_plugins.comicvine import utils
@@ -36,7 +36,7 @@ class Comicvine(Source):
     self.logger = logging.getLogger('urls')
     self.logger.setLevel(logging.DEBUG)
     self.logger.addHandler(utils.CalibreHandler(logging.DEBUG))
-    self._qlock = allocate_lock()
+    self._qlock = threading.RLock()
     Source.__init__(self, *args, **kwargs)
 
   def initialize(self):
@@ -110,8 +110,10 @@ class Comicvine(Source):
       if opts.opf:
         break
 
-  def enqueue(self, log, result_queue, issue_id):
+  def enqueue(self, log, result_queue, shutdown, issue_id):
     'Add a result entry to the result queue'
+    if shutdown.is_set():
+      raise threading.ThreadError
     log.debug('Adding Issue(%d) to queue' % issue_id)
     metadata = utils.build_meta(log, issue_id)
     if metadata:
@@ -137,7 +139,7 @@ class Comicvine(Source):
       comicvine_id = identifiers.get('comicvine')
       if comicvine_id is not None:
         log.debug('Looking up Issue(%d)' % int(comicvine_id))
-        self.enqueue(log, result_queue, int(comicvine_id))
+        self.enqueue(log, result_queue, threading.Event(), int(comicvine_id))
         return None
 
     if title:
@@ -158,11 +160,15 @@ class Comicvine(Source):
         for author in candidate_authors:
           issues.update(set(author.issues))
         candidate_issues = issues.intersection(candidate_issues)
-      
+
       # Queue candidates
       pool = ThreadPool(PREFS.get('worker_threads'))
-      enqueue = partial(self.enqueue, log, result_queue)
-      pool.map(enqueue, [issue.id for issue in candidate_issues])
+      shutdown = threading.Event()
+      enqueue = partial(self.enqueue, log, result_queue, shutdown)
+      try:
+        pool.map(enqueue, [issue.id for issue in candidate_issues])
+      finally:
+        shutdown.set()
 
     return None
 
