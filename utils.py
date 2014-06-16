@@ -202,7 +202,7 @@ def find_title(query, title, log, volumeid=None):
   log.debug("Searching for %s #%s" % (title_tokens, issue_number))
   if volumeid:
     volumeid = int(volumeid)
-  candidate_volumes = find_volumes(' '.join(title_tokens), log, volumeid)
+  candidate_volumes = find_volumes(' AND '.join(title_tokens), log, volumeid)
   return (issue_number, candidate_volumes)
 
 @retry_on_cv_error()
