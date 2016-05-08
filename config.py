@@ -3,7 +3,7 @@ Configuration for the Comicvine metadata source
 '''
 import time
 
-from PyQt4.Qt import QWidget, QGridLayout, QLabel, QLineEdit
+from PyQt5.Qt import QWidget, QGridLayout, QLabel, QLineEdit
 from calibre.utils.config import JSONConfig
 
 from calibre_plugins.comicvine  import pycomicvine
