@@ -46,7 +46,8 @@ class TokenBucket(object):
           next_token = self.params['update'] + 1/rate - time.time()
         else:
           next_token = 1/rate
-        logging.warn(
+        if rate != 1 :
+          logging.warn(
             'Slow down cowboy: %0.2f seconds to next token', next_token)
         time.sleep(next_token)
       self.params['tokens'] -= 1
@@ -138,10 +139,13 @@ def find_volumes(volume_title, log, volumeid=None):
     matches = pycomicvine.Volumes.search(
         query=volume_title, field_list=['id', 'name', 'count_of_issues', 
                                         'publisher'])
+    max_matches = PREFS['max_volumes'] - 1
     for i in range(len(matches)):
       try:
         if matches[i]:
           candidate_volumes.append(matches[i])
+          if (i >= max_matches):
+            break
       except IndexError:
         continue 
   log.debug('found %d volume matches' % len(candidate_volumes))

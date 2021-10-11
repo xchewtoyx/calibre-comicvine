@@ -21,8 +21,8 @@ class Comicvine(Source):
   ''' Metadata source implementation '''
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
-  author = 'Russell Heilling'
-  version = (0, 11, 2)
+  author = 'Russell Heilling/Bernardo Bandos'
+  version = (0, 12, 0)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
@@ -145,7 +145,7 @@ class Comicvine(Source):
     if title:
       # Look up candidate volumes based on title
       (issue_number, candidate_volumes) = utils.find_title(
-        self, title, log, volumeid=identifiers.get('comicvine-volume'))
+        self, title, log)
 
       # Look up candidate authors
       candidate_authors = utils.find_authors(self, authors, log)
