@@ -5,7 +5,7 @@ calibre_plugins.comicvine - A calibre metadata source for comicvine
 from functools import partial
 import logging
 from multiprocessing.pool import ThreadPool
-from Queue import Queue
+from queue import Queue
 import threading
 
 from calibre import setup_cli_handlers
@@ -64,7 +64,7 @@ class Comicvine(Source):
       result_text = '(%04d) - %s: %s [%s]' % (
         ranking(result), result.identifiers['comicvine'], 
         result.title, pubdate)
-    print result_text
+    print(result_text)
 
 
   def cli_main(self, args):

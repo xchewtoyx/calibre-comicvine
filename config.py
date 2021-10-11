@@ -34,14 +34,14 @@ class ConfigWidget(QWidget):
 
     self.threads_label = QLabel('&worker_threads:')
     self.threads_msg = QLineEdit(self)
-    self.threads_msg.setText(unicode(PREFS['worker_threads']))
+    self.threads_msg.setText(str(PREFS['worker_threads']))
     self.layout.addWidget(self.threads_label, 2, 0)
     self.layout.addWidget(self.threads_msg, 2, 1)
     self.threads_label.setBuddy(self.threads_msg)
 
   def save_settings(self):
     'Apply new settings value'
-    PREFS['api_key'] = unicode(self.key_msg.text())
+    PREFS['api_key'] = str(self.key_msg.text())
     PREFS['worker_threads'] = int(self.threads_msg.text())
     pycomicvine.api_key = PREFS['api_key']
 

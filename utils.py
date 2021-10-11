@@ -12,7 +12,7 @@ from calibre.utils import logging as calibre_logging # pylint: disable=W0404
 from calibre.utils.config import JSONConfig
 from calibre_plugins.comicvine import pycomicvine
 from calibre_plugins.comicvine.config import PREFS
-from pycomicvine.error import RateLimitExceededError
+from .pycomicvine.error import RateLimitExceededError
 
 # Optional Import for fuzzy title matching
 try:
@@ -182,7 +182,7 @@ def normalised_title(query, title):
     (r'\s\(?of \d+\)?', ''),
     (r'(?:v|vol)\s?\d+', ''),
     (r'\([^)]+\)', ''),
-    (u'(?:# ?)?0*([\d\xbd]+[^:\s]*):?[^\d]*$', '#\g<1>'),
+    ('(?:# ?)?0*([\d\xbd]+[^:\s]*):?[^\d]*$', '#\g<1>'),
     (r'\s{2,}', ' '),
   )
   for pattern, replacement in replacements:
@@ -237,7 +237,7 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
     if token not in volume:
       score += 10
     try:
-      similarity = Levenshtein.ratio(unicode(volume), unicode(title))
+      similarity = Levenshtein.ratio(str(volume), str(title))
       score += 100 - int(100 * similarity)
     except NameError:
       pass
