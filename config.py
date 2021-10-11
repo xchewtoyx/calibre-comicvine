@@ -30,7 +30,7 @@ class ConfigWidget(QWidget):
     self.key_msg = QLineEdit(self)
     self.key_msg.setText(PREFS['api_key'])
     self.layout.addWidget(self.key_label, 1, 0)
-    self.layout.addWidget(self.key_msg, 1, 1, 1, 2)
+    self.layout.addWidget(self.key_msg, 1, 1, 1, 20)
     self.key_label.setBuddy(self.key_msg)
 
     self.threads_label = QLabel('&worker_threads:')
