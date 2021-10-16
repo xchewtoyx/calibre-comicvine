@@ -206,20 +206,41 @@ def find_title(query, title, log, volumeid=None):
   log.debug("Searching for %s #%s" % (title_tokens, issue_number))
   if volumeid:
     volumeid = int(volumeid)
-  candidate_volumes = find_volumes(' AND '.join(title_tokens), log, volumeid)
+  '''
+  - edit - issue number preceded by # returns empty search too often
+  '''
+  candidate_volumes = find_volumes(' AND '.join(title_tokens) + ' AND ' + str(issue_number), log, volumeid)
   return (issue_number, candidate_volumes)
+
+def split_authors(query, authors):
+  a_list=authors[0].split("&")
+  return a_list
+
+def build_term(type,parts):
+    return ' '.join(x for x in parts)  
 
 @retry_on_cv_error()
 def find_authors(query, authors, log):
   '''Find people matching author string'''
   candidate_authors = []
-  author_name = ' '.join(query.get_author_tokens(authors))
-  if author_name and author_name != 'Unknown':
-    log.debug("Searching for author: %s" % author_name)
-    candidate_authors = pycomicvine.People(
-      filter='name:%s' % (author_name), 
-      field_list=['id', 'name'])
-    log.debug("%d matches found" % len(candidate_authors))
+  author_list = split_authors(query, authors)
+  for author_name in author_list:
+    q = ''
+    name_tokens = None
+    log.debug("Author %s" % author_name)
+    a_tokens = query.get_author_tokens([author_name], only_first_author=False)
+    if a_tokens:
+      name_tokens = build_term('author', a_tokens)
+    if name_tokens and name_tokens != 'Unknown':
+      log.debug("Searching for author: %s" % name_tokens)
+      aperson = pycomicvine.People(
+        filter='name:%s' % (name_tokens), 
+        field_list=['id'])
+      if aperson:
+        candidate_authors.append(pycomicvine.Person(
+          aperson[0].id
+        ))  
+  log.debug("%d matches found" % len(candidate_authors))
   return candidate_authors
 
 def score_title(metadata, title=None, issue_number=None, title_tokens=None):

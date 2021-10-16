@@ -149,10 +149,15 @@ class Comicvine(Source):
 
       # Look up candidate authors
       candidate_authors = utils.find_authors(self, authors, log)
-
+      
       # Look up candidate issues
       candidate_issues = utils.find_issues(
         candidate_volumes, issue_number, log)
+
+      #if no issues returned when issue_number is specified, query again without it
+      if not len(candidate_issues) :
+        candidate_issues = utils.find_issues(
+          candidate_volumes, None, log)
 
       # Refine issue selection based on authors
       if candidate_authors:
@@ -160,7 +165,9 @@ class Comicvine(Source):
         for author in candidate_authors:
           issues.update(set(author.issues))
         candidate_issues = issues.intersection(candidate_issues)
-
+      if candidate_issues:
+        for issue in candidate_issues:
+          log.debug('%s images found' % issue.image)
       # Queue candidates
       pool = ThreadPool(PREFS.get('worker_threads'))
       shutdown = threading.Event()
@@ -177,7 +184,7 @@ class Comicvine(Source):
                      timeout=30, get_best_cover=False):
     if identifiers and 'comicvine' in identifiers:
       for url in utils.cover_urls(identifiers['comicvine'], get_best_cover):
-        url = 'http://static.comicvine.com' + url
+#        url = 'http://static.comicvine.com' + url
         browser = self.browser
         log('Downloading cover from:', url)
         try:
