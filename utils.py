@@ -102,18 +102,19 @@ def retry_on_cv_error(retries=2):
     return retry_function
   return wrap_function
 
-@retry_on_cv_error()
-def build_meta(log, issue_id):
+#@retry_on_cv_error()
+def build_meta(log, issue):
   '''Build metadata record based on comicvine issue_id'''
-  issue = pycomicvine.Issue(issue_id, field_list=[
+  """ issue = pycomicvine.Issue(issue_id, field_list=[
       'id', 'name', 'volume', 'issue_number', 'person_credits', 'description', 
-      'store_date', 'cover_date'])
+      'store_date', 'cover_date']) """
   if not issue or not issue.volume:
-    log.warn('Unable to load Issue(%d)' % issue_id)
+    log.warn('Unable to load Issue(%s)' % issue)
     return None
   title = '%s #%s' %  (issue.volume.name, issue.issue_number)
   if issue.name:
     title = title + ': %s' % (issue.name)
+  log.debug('Looking up authors: %s' % issue.person_credits)
   authors = [p.name for p in issue.person_credits]
   meta = Metadata(title, authors)
   meta.series = issue.volume.name
@@ -121,7 +122,10 @@ def build_meta(log, issue_id):
   meta.set_identifier('comicvine', str(issue.id))
   meta.set_identifier('comicvine-volume', str(issue.volume.id))
   meta.comments = issue.description
-  meta.has_cover = False
+  if issue.image:
+    meta.has_cover = True
+  else:
+    meta.has_cover = False
   if issue.volume.publisher:
     meta.publisher = issue.volume.publisher.name
   meta.pubdate = issue.store_date or issue.cover_date
@@ -164,8 +168,8 @@ def find_issues(candidate_volumes, issue_number, log):
   candidate_issues = candidate_issues + list(
     pycomicvine.Issues(
       filter=filter_string, field_list=[
-        'id', 'name', 'volume', 'issue_number', 'description', 
-        'store_date', 'cover_date', 'image']))
+        'id', 'name', 'volume', 'issue_number', 'person_credits', 
+        'description', 'store_date', 'cover_date', 'image']))
   log.debug('%d matches found' % len(candidate_issues))
   return candidate_issues
 

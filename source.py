@@ -110,12 +110,12 @@ class Comicvine(Source):
       if opts.opf:
         break
 
-  def enqueue(self, log, result_queue, shutdown, issue_id):
+  def enqueue(self, log, result_queue, shutdown, issue):
     'Add a result entry to the result queue'
     if shutdown.is_set():
       raise threading.ThreadError
-    log.debug('Adding Issue(%d) to queue' % issue_id)
-    metadata = utils.build_meta(log, issue_id)
+    log.debug('Adding Issue(%d) to queue' % issue.id)
+    metadata = utils.build_meta(log, issue)
     if metadata:
       self.clean_downloaded_metadata(metadata)
       with self._qlock:
@@ -175,7 +175,7 @@ class Comicvine(Source):
       shutdown = threading.Event()
       enqueue = partial(self.enqueue, log, result_queue, shutdown)
       try:
-        pool.map(enqueue, [issue.id for issue in candidate_issues])
+        pool.map(enqueue, [issue for issue in candidate_issues])
       finally:
         shutdown.set()
 
