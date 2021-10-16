@@ -98,6 +98,7 @@ class Comicvine(Source):
         title = arg.split(':', 1)[1]
       if arg.startswith('a:'):
         authors.append(arg.split(':', 1)[1])
+        authors = authors[0].split("&")        
       if arg.startswith('i:'):
         (idtype, identifier) = arg.split(':', 2)[1:]
         ids[idtype] = int(identifier)
@@ -142,7 +143,6 @@ class Comicvine(Source):
         issue = pycomicvine.Issue(int(comicvine_id), field_list=[
           'id', 'name', 'volume', 'issue_number', 'person_credits', 'description', 
           'store_date', 'cover_date'])
-        
         self.enqueue(log, result_queue, threading.Event(), issue)
         return None
 

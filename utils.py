@@ -226,8 +226,9 @@ def build_term(type,parts):
 def find_authors(query, authors, log):
   '''Find people matching author string'''
   candidate_authors = []
-  author_list = split_authors(query, authors)
-  for author_name in author_list:
+  log.debug("Authors %s" % authors)
+#  author_list = split_authors(query, authors)
+  for author_name in authors:
     q = ''
     name_tokens = None
     log.debug("Author %s" % author_name)
