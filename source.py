@@ -22,7 +22,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling/Bernardo Bandos'
-  version = (0, 12, 0)
+  version = (0, 13, 1)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
@@ -139,7 +139,11 @@ class Comicvine(Source):
       comicvine_id = identifiers.get('comicvine')
       if comicvine_id is not None:
         log.debug('Looking up Issue(%d)' % int(comicvine_id))
-        self.enqueue(log, result_queue, threading.Event(), int(comicvine_id))
+        issue = pycomicvine.Issue(int(comicvine_id), field_list=[
+          'id', 'name', 'volume', 'issue_number', 'person_credits', 'description', 
+          'store_date', 'cover_date'])
+        
+        self.enqueue(log, result_queue, threading.Event(), issue)
         return None
 
     if title:
@@ -167,9 +171,6 @@ class Comicvine(Source):
         for author in candidate_authors:
           issues.update(set(author.issues))
         candidate_issues = issues.intersection(candidate_issues)
-      if candidate_issues:
-        for issue in candidate_issues:
-          log.debug('%s images found' % issue.image)
       # Queue candidates
       pool = ThreadPool(PREFS.get('worker_threads'))
       shutdown = threading.Event()

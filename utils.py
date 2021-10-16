@@ -114,7 +114,6 @@ def build_meta(log, issue):
   title = '%s #%s' %  (issue.volume.name, issue.issue_number)
   if issue.name:
     title = title + ': %s' % (issue.name)
-  log.debug('Looking up authors: %s' % issue.person_credits)
   authors = [p.name for p in issue.person_credits]
   meta = Metadata(title, authors)
   meta.series = issue.volume.name
