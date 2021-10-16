@@ -148,7 +148,9 @@ class Comicvine(Source):
         self, title, log)
 
       # Look up candidate authors
-      candidate_authors = utils.find_authors(self, authors, log)
+      candidate_authors = None
+      if authors:
+        candidate_authors = utils.find_authors(self, authors, log)
       
       # Look up candidate issues
       candidate_issues = utils.find_issues(
