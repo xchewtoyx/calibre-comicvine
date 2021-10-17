@@ -22,7 +22,7 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling/Bernardo Bandos'
-  version = (0, 13, 2)
+  version = (0, 13, 3)
   minimum_calibre_version = (5, 0, 0)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
@@ -135,7 +135,8 @@ class Comicvine(Source):
   def identify(self, log, result_queue, abort, 
                title=None, authors=None, identifiers=None, timeout=30):
     '''Attempt to identify comicvine Issue matching given parameters'''
-    
+    volume_id = None
+
     # Do a simple lookup if comicvine identifier present
     if identifiers:
       comicvine_id = identifiers.get('comicvine')
@@ -146,11 +147,17 @@ class Comicvine(Source):
           'store_date', 'cover_date'])
         self.enqueue(log, result_queue, threading.Event(), issue)
         return None
+      # get the volume id if present 
+      comicvine_id = identifiers.get('comicvine-volume')
+      if comicvine_id is not None:
+        log.debug('We have a Volume(%d)' % int(comicvine_id))
+        volume_id = int(comicvine_id)
+      
 
     if title:
       # Look up candidate volumes based on title
       (issue_number, candidate_volumes) = utils.find_title(
-        self, title, log)
+        self, title, log, volume_id)
 
       # Look up candidate authors
       candidate_authors = None
