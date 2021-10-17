@@ -63,15 +63,24 @@ or:
     $ calibre-debug -r Comicvine t:'Batman #12' i:comicvine-volume:42721
     (0000) - 349621: Batman #12: Ghost in the Machine; [2012-08-08]
 
+You can specify more authors in a query by separating them with " & " as they 
+are shown in calibre metadata. Remember to enclose the whole authors query string 
+in quotes.
+
 ## Contribute 
 
-You can contribute by submitting issue tickets on GitHub
-(https://github.com/authmillenon/pycomicvine), including Pull
-Requests. You can test the comicvine plugin by calling:
+You can contribute to calibere-comicvine by submitting issue tickets on GitHub
+(https://github.com/jbbandos/calibre-comicvine), including Pull
+Requests. 
+You can contribute to pycomicvine lib by submitting issue tickets on GitHub
+(https://github.com/miri64/pycomicvine), including Pull
+Requests. 
+You can test the comicvine plugin by calling:
 
     calibre-debug -e __init__.py
 
 ## License
 Copyright (c) 2013 Russell Heilling
+Changes and updates Copyright (c) 2021 Bernardo Bandos
 
 pycomicvine is Copyright (c) Martin Lenders

@@ -586,6 +586,39 @@ class Concept(_SingularResource):
 class Concepts(_SortableListResource):
     pass
 
+class Episode(_SingularResource):
+    aliases = AttributeDefinition('keep')
+    api_detail_url = AttributeDefinition('keep')
+    character_credits = AttributeDefinition('Characters')
+    characters_died_in = AttributeDefinition('Characters')
+    concept_credits = AttributeDefinition('Concepts')
+    air_date = AttributeDefinition(datetime.datetime)
+    date_added = AttributeDefinition(datetime.datetime)
+    date_last_updated = AttributeDefinition(datetime.datetime)
+    deck = AttributeDefinition('keep')
+    description = AttributeDefinition('keep')
+    first_appearance_characters = AttributeDefinition('Characters')
+    first_appearance_concepts = AttributeDefinition('Concepts')
+    first_appearance_locations = AttributeDefinition('Locations')
+    first_appearance_objects = AttributeDefinition('Objects')
+    first_appearance_storyarcs = AttributeDefinition('StoryArcs')
+    first_appearance_teams = AttributeDefinition('Teams')
+    has_staff_review = AttributeDefinition('keep')
+    id = AttributeDefinition('keep')
+    image = AttributeDefinition('keep')
+    episode_number = AttributeDefinition('keep')
+    location_credits = AttributeDefinition('Locations')
+    name = AttributeDefinition('keep')
+    object_credits = AttributeDefinition('Objects')
+    person_credits = AttributeDefinition('People')
+    site_detail_url = AttributeDefinition('keep')
+    story_arc_credits = AttributeDefinition('StoryArcs')
+    team_credits = AttributeDefinition('team_credits')
+    series = AttributeDefinition('Series')
+
+class Episodes(_SortableListResource):
+    pass
+
 class Issue(_SingularResource):
     aliases = AttributeDefinition('keep')
     api_detail_url = AttributeDefinition('keep')
@@ -846,6 +879,28 @@ class Search(_ListResource):
     def __init__(self, query, **kwargs):
         super(Search, self).__init__(query=query, **kwargs)
 
+class Series(_SingularResource):
+    aliases = AttributeDefinition('keep')
+    api_detail_url = AttributeDefinition('keep')
+    character_credits = AttributeDefinition('Characters')
+    count_of_episodes = AttributeDefinition('keep')
+    date_added = AttributeDefinition(datetime.datetime)
+    date_last_updated = AttributeDefinition(datetime.datetime)
+    deck = AttributeDefinition('keep')
+    description = AttributeDefinition('keep')
+    first_episode = AttributeDefinition('Episode')
+    id = AttributeDefinition('keep')
+    image = AttributeDefinition('keep')
+    last_episode = AttributeDefinition('Episode')
+    location_credits = AttributeDefinition('Locations')
+    name = AttributeDefinition('keep')
+    publisher = AttributeDefinition('Publisher')
+    site_detail_url = AttributeDefinition('keep')
+    start_year = AttributeDefinition('keep')
+
+class SeriesList(_ListResource):
+    pass
+
 class StoryArc(_SingularResource):
     aliases = AttributeDefinition('keep')
     api_detail_url = AttributeDefinition('keep')
@@ -999,6 +1054,7 @@ class Volume(_SingularResource):
     first_issue = AttributeDefinition('Issue')
     id = AttributeDefinition('keep')
     image = AttributeDefinition('keep')
+    issues = AttributeDefinition('Issues')
     last_issue = AttributeDefinition('Issue')
     locations = AttributeDefinition('Locations')
     name = AttributeDefinition('keep')
