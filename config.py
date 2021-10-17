@@ -15,7 +15,7 @@ PREFS.defaults['requests_rate'] = 1
 PREFS.defaults['requests_burst'] = 10
 PREFS.defaults['requests_tokens'] = 0
 PREFS.defaults['requests_update'] = time.time()
-PREFS.defaults['max_volumes'] = 20
+PREFS.defaults['max_volumes'] = 2
 pycomicvine.api_key = PREFS['api_key']
 
 class ConfigWidget(QWidget):

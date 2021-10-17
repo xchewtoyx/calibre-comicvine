@@ -120,7 +120,10 @@ def build_meta(log, issue):
   meta.series_index = str(issue.issue_number)
   meta.set_identifier('comicvine', str(issue.id))
   meta.set_identifier('comicvine-volume', str(issue.volume.id))
-  meta.comments = issue.description
+  if issue.description:
+    meta.comments = issue.description
+  else:
+    meta.comments = issue.volume.description
   if issue.image:
     meta.has_cover = True
   else:
