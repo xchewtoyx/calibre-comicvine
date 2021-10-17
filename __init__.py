@@ -12,7 +12,7 @@ if __name__ == '__main__':
       (
         {
           'title': 'Preacher Special: The Story of You-Know-Who',
-          'authors': 'Garth Ennis' 
+          'authors': ['Garth Ennis']
           },
         [
           title_test('Preacher Special: The Story of You-Know-Who', 

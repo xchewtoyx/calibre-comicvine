@@ -215,10 +215,6 @@ def find_title(query, title, log, volumeid=None):
   candidate_volumes = find_volumes(' AND '.join(title_tokens) + ' AND ' + str(issue_number), log, volumeid)
   return (issue_number, candidate_volumes)
 
-def split_authors(query, authors):
-  a_list=authors[0].split("&")
-  return a_list
-
 def build_term(type,parts):
     return ' '.join(x for x in parts)  
 
@@ -227,9 +223,7 @@ def find_authors(query, authors, log):
   '''Find people matching author string'''
   candidate_authors = []
   log.debug("Authors %s" % authors)
-#  author_list = split_authors(query, authors)
   for author_name in authors:
-    q = ''
     name_tokens = None
     log.debug("Author %s" % author_name)
     a_tokens = query.get_author_tokens([author_name], only_first_author=False)
