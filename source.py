@@ -23,6 +23,7 @@ class Comicvine(Source):
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling/Bernardo Bandos'
   version = (0, 13, 2)
+  minimum_calibre_version = (5, 0, 0)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
