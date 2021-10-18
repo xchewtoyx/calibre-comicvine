@@ -139,7 +139,7 @@ def find_volumes(volume_title, log, volumeid=None):
   candidate_volumes = []
   if volumeid:
     log.debug('Looking up volume: %d' % volumeid)
-    candidate_volumes = [pycomicvine.Volume(volumeid)]
+    candidate_volumes = [pycomicvine.Volume(volumeid, all=True)]
   else:
     log.debug('Looking up volume: %s' % volume_title)
     matches = pycomicvine.Volumes.search(
@@ -171,7 +171,7 @@ def find_issues(candidate_volumes, issue_number, log):
     pycomicvine.Issues(
       filter=filter_string, field_list=[
         'id', 'name', 'volume', 'issue_number', 'person_credits', 
-        'description', 'store_date', 'cover_date', 'image']))
+        'description', 'store_date', 'cover_date', 'image'], all=True))
   log.debug('%d matches found' % len(candidate_issues))
   return candidate_issues
 
