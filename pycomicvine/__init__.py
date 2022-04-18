@@ -32,6 +32,9 @@ import dateutil.parser
 from . import error
 import collections
 
+
+from calibre import random_user_agent
+
 _API_URL = "https://www.comicvine.com/api/"
 
 _cached_resources = {}
@@ -188,11 +191,15 @@ class _Resource(object):
         url = baseurl+"?"+params
         hook_run('pre_request_hook')
         logging.getLogger(__name__).debug("Calling "+url)
+        urlHeaders = {'User-Agent': random_user_agent()}
+        logging.getLogger(__name__).debug("Agent "+urlHeaders["User-Agent"])
+        urlRequest = urllib.request.Request(url, headers=urlHeaders)
+
         if timeout == None:
-            response_raw = json.loads(urllib.request.urlopen(url).read())
+            response_raw = json.loads(urllib.request.urlopen(urlRequest).read())
         else:
             response_raw = json.loads(urllib.request.urlopen(
-                    url, 
+                    urlRequest, 
                     timeout=timeout
                 ).read())
         response = type._Response(**response_raw)

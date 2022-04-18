@@ -11,14 +11,22 @@ if __name__ == '__main__':
   test_identify_plugin(Comicvine.name, [
       (
         {
-          'title': 'Preacher Special: The Story of You-Know-Who',
-          'authors': ['Garth Ennis']
+          'title': 'heavy metal magazine #202008: vol. 300: all star special',
+          'authors': ['Various', 'Claudia Scarletgothica', 'Dave Sharpe', 'Glenn Fabry']
           },
         [
-          title_test('Preacher Special: The Story of You-Know-Who', 
+          title_test('heavy metal magazine #202008: vol. 300: all star special', 
                      exact=False),
-          authors_test(['Garth Ennis', 'Richard Case', 'Matt Hollingsworth',
-                        'Clem Robins', 'Glenn Fabry', 'Julie Rottenberg']),
+          authors_test(['duke mighten', 'jackson butch guice', 'mœbius', 'paul fry', 
+          'agustin alessio', 'dave sharpe', 'jim terry', 'richard corben', 'protobunker studio', 
+          'bruce edwards', 'geoff boucher', 'frank forte', 'dylan sprouse', 'northworld', 
+          'bryan alvarez', 'brennan wagner', 'mark bode', 'giuseppe cafaro', 'joshua sky', 
+          'mark mccann', 'glenn fabry', 'matthew medney', 'vaughn bode', 'kent williams', 
+          'jaime martinez', 'justin mohlman', 'patrick norbert', 'adam brown', 'kelley jones', 
+          'al barrionuevo', 'brendan columbus', 'claudia scarletgothica', 'chris sotomayor', 
+          'marshall dillon', 'dan berger', 'german ponce', 'candice han', 'diego yapur', 
+          'justin jordan', 'albert patin de la fizeliere', 'r. g. llarena', 'stephanie phillips', 
+          'tater 7', 'david erwin', 'george c. romero', 'blake northcott']),
          ]
       ), 
     ]
