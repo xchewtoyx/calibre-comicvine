@@ -31,7 +31,10 @@ import datetime, logging
 import dateutil.parser
 from . import error
 import collections
-
+try:
+    collectionsAbc = collections.abc
+except AttributeError:
+    collectionsAbc = collections
 
 from calibre import random_user_agent
 
@@ -78,7 +81,7 @@ class AttributeDefinition(object):
             self._target_name = 'int'
         elif callable(target):
             if not isinstance(start_type, type) and \
-                not (isinstance(start_type, collections.Iterable) and
+                not (isinstance(start_type, collectionsAbc.Iterable) and
                      all(isinstance(t, type) for t in start_type)):
                 raise error.IllegalArquementException(
                         "A start type needs to be defined"

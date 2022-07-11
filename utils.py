@@ -195,16 +195,18 @@ def normalised_title(query, title):
     ('(?:# ?)?0*([\d\xbd]+[^:\s]*):?[^\d]*$', '#\g<1>'),
     (r'\s{2,}', ' '),
   )
-  for pattern, replacement in replacements:
-    title = re.sub(pattern, replacement, title)
-  issue_pattern = re.compile('#([^:\s]+)')
-  issue_match = issue_pattern.search(title)
-  if issue_match:
-    issue_number = issue_match.group(1)
-    title = issue_pattern.sub('', title)
-  for token in query.get_title_tokens(title):
-    title_tokens.append(token.lower())
-  return issue_number, title_tokens
+  if isinstance(title, str):
+    for pattern, replacement in replacements:
+      title = re.sub(pattern, replacement, title)
+    issue_pattern = re.compile('#([^:\s]+)')
+    issue_match = issue_pattern.search(title)
+    if issue_match:
+      issue_number = issue_match.group(1)
+      title = issue_pattern.sub('', title)
+    for token in query.get_title_tokens(title):
+      title_tokens.append(token.lower())
+    return issue_number, title_tokens
+  return 0,''
 
 def find_title(query, title, log, volumeid=None):
   '''Extract volume name and issue number from issue title'''

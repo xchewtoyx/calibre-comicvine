@@ -22,8 +22,8 @@ class Comicvine(Source):
   name = 'Comicvine'
   description = 'Downloads metadata and covers from Comicvine'
   author = 'Russell Heilling/Bernardo Bandos'
-  version = (0, 13, 4)
-  minimum_calibre_version = (5, 0, 0)
+  version = (0, 14, 1)
+  minimum_calibre_version = (6, 0, 0)
   capabilities = frozenset(['identify', 'cover'])
   touched_fields = frozenset([
       'title', 'authors', 'comments', 'publisher', 'pubdate', 'series',
@@ -127,7 +127,12 @@ class Comicvine(Source):
   def identify_results_keygen(self, title=None, authors=None, 
                               identifiers=None):
     'Provide a keying function for result comparison'
-    (issue_number, title_tokens) = utils.normalised_title(self, title)
+    if not isinstance(title, str):
+      title=''
+      issue_number=0
+      title_tokens=''
+    else:
+      (issue_number, title_tokens) = utils.normalised_title(self, title)
     return partial(
       utils.keygen, title=title, authors=authors, identifiers=identifiers,
       issue_number=issue_number, title_tokens=title_tokens)
