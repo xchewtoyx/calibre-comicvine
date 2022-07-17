@@ -2,7 +2,8 @@
 A calibre metadata source plugin for comicvine.com.
 
 # Fork
-This fork is an attempt at getting the (abandoned) plugin working with calibre 5.x (jbbandos@github).
+This fork is an attempt at getting the (abandoned) plugin working with calibre 5.x+ (jbbandos@github). 
+The owner of the original code (@xchewtoyx) was informed.
 
 ## Install
 
@@ -81,6 +82,6 @@ You can test the comicvine plugin by calling:
 
 ## License
 Copyright (c) 2013 Russell Heilling
-Changes and updates Copyright (c) 2021 Bernardo Bandos
+Changes and updates Copyright (c) 2021,2022 Bernardo Bandos
 
 pycomicvine is Copyright (c) Martin Lenders
