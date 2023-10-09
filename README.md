@@ -70,7 +70,7 @@ in quotes.
 
 ## Contribute 
 
-You can contribute to calibere-comicvine by submitting issue tickets on GitHub
+You can contribute to calibre-comicvine by submitting issue tickets on GitHub
 (https://github.com/jbbandos/calibre-comicvine), including Pull
 Requests. 
 You can contribute to pycomicvine lib by submitting issue tickets on GitHub
