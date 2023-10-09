@@ -24,7 +24,7 @@ class Comicvine(Source):
     name = "Comicvine"
     description = "Downloads metadata and covers from Comicvine"
     author = "Russell Heilling/Bernardo Bandos"
-    version = (0, 14, 2)
+    version = (0, 14, 3)
     minimum_calibre_version = (6, 0, 0)
     capabilities = frozenset(["identify", "cover"])
     touched_fields = frozenset(
@@ -60,9 +60,11 @@ class Comicvine(Source):
         return ConfigWidget()
 
     def save_settings(self, config_widget):
+        """Save the changed settings"""
         config_widget.save_settings()
 
     def is_configured(self):
+        """Check if the API key has been configured"""
         return bool(PREFS.get("api_key"))
 
     def _print_result(self, result, ranking, opf=False):
@@ -132,13 +134,13 @@ class Comicvine(Source):
         "Add a result entry to the result queue"
         if shutdown.is_set():
             raise threading.ThreadError
-        log.debug("Adding Issue(%d) to queue" % issue.id)
+        log.debug(f"Adding Issue '#{issue.id}' to queue")
         metadata = utils.build_meta(log, issue)
         if metadata:
             self.clean_downloaded_metadata(metadata)
             with self._qlock:
                 result_queue.put(metadata)
-            log.debug("Added Issue(%s) to queue" % metadata.title)
+            log.debug(f"Added 'Issue {metadata.title}' to queue")
 
     def identify_results_keygen(self, title=None, authors=None, identifiers=None):
         "Provide a keying function for result comparison"
@@ -174,7 +176,7 @@ class Comicvine(Source):
         if identifiers:
             comicvine_id = identifiers.get("comicvine")
             if comicvine_id is not None:
-                log.debug("Looking up Issue(%d)" % int(comicvine_id))
+                log.debug(f"Looking up Issue({int(comicvine_id)})")
                 issue = pycomicvine.Issue(
                     int(comicvine_id),
                     field_list=[
@@ -193,7 +195,7 @@ class Comicvine(Source):
             # get the volume id if present
             comicvine_id = identifiers.get("comicvine-volume")
             if comicvine_id is not None:
-                log.debug("We have a Volume(%d)" % int(comicvine_id))
+                log.debug(f"We have a Volume({int(comicvine_id)})")
                 volume_id = int(comicvine_id)
 
         if title:
@@ -242,6 +244,7 @@ class Comicvine(Source):
         timeout=30,
         get_best_cover=False,
     ):
+        """will download the first cover for a specific title"""
         if identifiers and "comicvine" in identifiers:
             for url in utils.cover_urls(identifiers["comicvine"], get_best_cover):
                 #        url = 'http://static.comicvine.com' + url
@@ -250,5 +253,5 @@ class Comicvine(Source):
                 try:
                     cdata = browser.open_novisit(url, timeout=timeout).read()
                     result_queue.put((self, cdata))
-                except:
+                except Exception:
                     log.exception("Failed to download cover from:", url)

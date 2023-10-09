@@ -96,7 +96,7 @@ def retry_on_cv_error(retries=2):
                 except RateLimitExceededError:
                     logging.warning("API Rate limited exceeded.")
                     raise
-                except:
+                except Exception:
                     logging.warning(
                         "Calling %r failed on attempt %d/%d with args: %r %r",
                         target_function,
@@ -125,11 +125,11 @@ def build_meta(log, issue):
       'id', 'name', 'volume', 'issue_number', 'person_credits', 'description', 
       'store_date', 'cover_date']) """
     if not issue or not issue.volume:
-        log.warn("Unable to load Issue(%s)" % issue)
+        log.warn(f"Unable to load Issue({issue})")
         return None
-    title = "%s #%s" % (issue.volume.name, issue.issue_number)
+    title = f"{issue.volume.name} #{issue.issue_number}"
     if issue.name:
-        title = title + ": %s" % (issue.name)
+        title = title + f": {issue.name}"
     authors = [p.name for p in issue.person_credits]
     meta = Metadata(title, authors)
     meta.series = issue.volume.name
@@ -155,24 +155,24 @@ def find_volumes(volume_title, log, volumeid=None):
     """Look up volumes matching title string"""
     candidate_volumes = []
     if volumeid:
-        log.debug("Looking up volume: %d" % volumeid)
+        log.debug(f"Looking up volume: {volumeid}")
         candidate_volumes = [pycomicvine.Volume(volumeid, all=True)]
     else:
-        log.debug("Looking up volume: %s" % volume_title)
+        log.debug(f"Looking up volume: {volume_title}")
         matches = pycomicvine.Volumes.search(
             query=volume_title,
             field_list=["id", "name", "count_of_issues", "publisher"],
         )
         max_matches = PREFS["max_volumes"] - 1
-        for i in range(len(matches)):
+        for i, match in enumerate(matches):
             try:
-                if matches[i]:
-                    candidate_volumes.append(matches[i])
+                if match:
+                    candidate_volumes.append(match)
                     if i >= max_matches:
                         break
             except IndexError:
                 continue
-    log.debug("found %d volume matches" % len(candidate_volumes))
+    log.debug(f"found {len(candidate_volumes)} volume matches")
     return candidate_volumes
 
 
@@ -184,9 +184,9 @@ def find_issues(candidate_volumes, issue_number, log):
         "volume:%s" % ("|".join(str(volume.id) for volume in candidate_volumes))
     ]
     if issue_number is not None:
-        issue_filter.append("issue_number:%s" % issue_number)
+        issue_filter.append(f"issue_number:{issue_number}")
     filter_string = ",".join(issue_filter)
-    log.debug("Searching for Issues(%s)" % filter_string)
+    log.debug(f"Searching for Issues({filter_string})")
     candidate_issues = candidate_issues + list(
         pycomicvine.Issues(
             filter=filter_string,
@@ -204,7 +204,7 @@ def find_issues(candidate_volumes, issue_number, log):
             all=True,
         )
     )
-    log.debug("%d matches found" % len(candidate_issues))
+    log.debug(f"{len(candidate_issues)} matches found")
     return candidate_issues
 
 
@@ -245,7 +245,7 @@ def normalised_title(query, title):
 def find_title(query, title, log, volumeid=None):
     """Extract volume name and issue number from issue title"""
     (issue_number, title_tokens) = normalised_title(query, title)
-    log.debug("Searching for %s #%s" % (title_tokens, issue_number))
+    log.debug(f"Searching for {title_tokens} #{issue_number}")
     if volumeid:
         volumeid = int(volumeid)
     """
@@ -258,6 +258,7 @@ def find_title(query, title, log, volumeid=None):
 
 
 def build_term(build_type, parts):
+    """function to build search terms"""
     if build_type == "author":
         return " ".join(x for x in parts)
     else:
@@ -268,21 +269,21 @@ def build_term(build_type, parts):
 def find_authors(query, authors, log):
     """Find people matching author string"""
     candidate_authors = []
-    log.debug("Authors %s" % authors)
+    log.debug(f"Authors {authors}")
     for author_name in authors:
         name_tokens = None
-        log.debug("Author %s" % author_name)
+        log.debug(f"Author {author_name}")
         a_tokens = query.get_author_tokens([author_name], only_first_author=False)
         if a_tokens:
             name_tokens = build_term("author", a_tokens)
         if name_tokens and name_tokens != "Unknown":
-            log.debug("Searching for author: %s" % name_tokens)
+            log.debug(f"Searching for author: {name_tokens}")
             aperson = pycomicvine.People(
                 filter="name:%s" % (name_tokens), field_list=["id"]
             )
             if aperson:
                 candidate_authors.append(pycomicvine.Person(aperson[0].id))
-    log.debug("%d matches found" % len(candidate_authors))
+    log.debug(f"{len(candidate_authors)} matches found")
     return candidate_authors
 
 
@@ -291,7 +292,7 @@ def score_title(metadata, title=None, issue_number=None, title_tokens=None):
     Calculate title matching ranking
     """
     score = 0
-    volume = "%s #%s" % (metadata.series.lower(), metadata.series_index)
+    volume = f"{metadata.series.lower()} #{metadata.series_index}"
     match_year = re.compile(r"\((\d{4})\)")
     year = match_year.search(title)
     if year:
