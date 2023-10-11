@@ -20,8 +20,8 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 # SOFTWARE.
 
-import urllib2
-from urllib import urlencode
+import urllib.request, urllib.error, urllib.parse
+from urllib.parse import urlencode
 try:
     import simplejson as json
 except ImportError:
@@ -31,6 +31,12 @@ import datetime, logging
 import dateutil.parser
 from . import error
 import collections
+try:
+    collectionsAbc = collections.abc
+except AttributeError:
+    collectionsAbc = collections
+
+from calibre import random_user_agent
 
 _API_URL = "https://www.comicvine.com/api/"
 
@@ -75,7 +81,7 @@ class AttributeDefinition(object):
             self._target_name = 'int'
         elif callable(target):
             if not isinstance(start_type, type) and \
-                not (isinstance(start_type, collections.Iterable) and
+                not (isinstance(start_type, collectionsAbc.Iterable) and
                      all(isinstance(t, type) for t in start_type)):
                 raise error.IllegalArquementException(
                         "A start type needs to be defined"
@@ -96,7 +102,7 @@ class AttributeDefinition(object):
         elif self._target != None:
             if value == None:
                 pass
-            elif isinstance(value, basestring):
+            elif isinstance(value, str):
                 return self._target(value)
         else:
             target = getattr(sys.modules[__name__], self._target_name)
@@ -164,12 +170,12 @@ class _Resource(object):
                     )
             params['api_key'] = api_key
         if 'field_list' in params and params['field_list'] != None:
-            if not isinstance(params['field_list'], basestring):
+            if not isinstance(params['field_list'], str):
                 field_list = ""
                 try:
                     for field_name in params['field_list']:
                         field_list += str(field_name)+","
-                except TypeError, e:
+                except TypeError as e:
                     raise error.IllegalArquementException(
                             "'field_list' must be iterable"
                         )
@@ -188,11 +194,15 @@ class _Resource(object):
         url = baseurl+"?"+params
         hook_run('pre_request_hook')
         logging.getLogger(__name__).debug("Calling "+url)
+        urlHeaders = {'User-Agent': random_user_agent()}
+        logging.getLogger(__name__).debug("Agent "+urlHeaders["User-Agent"])
+        urlRequest = urllib.request.Request(url, headers=urlHeaders)
+
         if timeout == None:
-            response_raw = json.loads(urllib2.urlopen(url).read())
+            response_raw = json.loads(urllib.request.urlopen(urlRequest).read())
         else:
-            response_raw = json.loads(urllib2.urlopen(
-                    url, 
+            response_raw = json.loads(urllib.request.urlopen(
+                    urlRequest, 
                     timeout=timeout
                 ).read())
         response = type._Response(**response_raw)
@@ -202,7 +212,7 @@ class _Resource(object):
                     error.UnknownStatusError
                 )(response.error)
         if 'aliases' in response.results and \
-                isinstance(response.results['aliases'], basestring):
+                isinstance(response.results['aliases'], str):
             response.results['aliases'] = response.results[
                     'aliases'
                 ].split('\n')
@@ -297,10 +307,7 @@ class _SingularResource(_Resource):
         def _parse_attribute(name):
             fields = _object_attribute('_fields')
             value = _object_attribute('_fields')[name]
-            if name in filter(
-                    lambda x: not x.startswith('_'),
-                    type(self).__dict__
-                ):
+            if name in [x for x in type(self).__dict__ if not x.startswith('_')]:
                 definition = type(self).__dict__[name]
                 fields[name] = definition.convert(value)
             return fields[name]
@@ -341,16 +348,16 @@ class _SingularResource(_Resource):
 
     def __unicode__(self):
         if 'name' in self._fields:
-            return unicode(self.name.encode(
+            return str(self.name.encode(
                     'ascii',
                     'backslashreplace'
-                )) + u" ["+unicode(self.id)+u"]"
+                )) + " ["+str(self.id)+"]"
         else:
-            return u"["+unicode(self.id)+u"]"
+            return "["+str(self.id)+"]"
 
     def __repr__(self):
-        return u"<"+unicode(type(self).__name__)+u": "+unicode(self)\
-                +u">"
+        return "<"+str(type(self).__name__)+": "+str(self)\
+                +">"
 
 class _ListResource(_Resource):
     def _request_object(self, **params):
@@ -442,28 +449,28 @@ class _ListResource(_Resource):
         return self._results[index]
 
     def __iter__(self):
-        for index in xrange(self._total):
+        for index in range(self._total):
             yield self[index]
 
     def __str__(self):
-        return str(unicode(self))
+        return str(str(self))
 
     def __unicode__(self):
         if len(self) == 0:
-            return u"[]"
-        string = u"["
+            return "[]"
+        string = "["
         for element in self:
-            string += unicode(element)+u", "
-        string = string[:-2]+u"]"
+            string += str(element)+", "
+        string = string[:-2]+"]"
         return string
 
     def __repr__(self):
         if len(self) == 0:
-            return unicode(type(self).__name__)+u"[]"
-        string = unicode(type(self).__name__)+u"["
+            return str(type(self).__name__)+"[]"
+        string = str(type(self).__name__)+"["
         for element in self:
-            string += repr(element)+u","
-        string = string[:-1]+u"]"
+            string += repr(element)+","
+        string = string[:-1]+"]"
         return string
 
     def _parse_result(self, index):
@@ -484,7 +491,7 @@ class _ListResource(_Resource):
 class _SortableListResource(_ListResource):
     def __init__(self, init_list = None, sort = None, **kwargs):
         if sort != None:
-            if isinstance(sort, basestring):
+            if isinstance(sort, str):
                 if ':' not in sort:
                     sort += ":asc"
             else:
@@ -525,8 +532,8 @@ class Character(_SingularResource):
     description = AttributeDefinition('keep')
     first_appeared_in_issue = AttributeDefinition('Issue')
     gender = AttributeDefinition(
-            lambda value:   u'\u2642' if value == 1 else
-                            u'\u2640' if value == 2 else u'\u26a7',
+            lambda value:   '\u2642' if value == 1 else
+                            '\u2640' if value == 2 else '\u26a7',
             int
         )
     id = AttributeDefinition('keep')
@@ -589,6 +596,39 @@ class Concept(_SingularResource):
 class Concepts(_SortableListResource):
     pass
 
+class Episode(_SingularResource):
+    aliases = AttributeDefinition('keep')
+    api_detail_url = AttributeDefinition('keep')
+    character_credits = AttributeDefinition('Characters')
+    characters_died_in = AttributeDefinition('Characters')
+    concept_credits = AttributeDefinition('Concepts')
+    air_date = AttributeDefinition(datetime.datetime)
+    date_added = AttributeDefinition(datetime.datetime)
+    date_last_updated = AttributeDefinition(datetime.datetime)
+    deck = AttributeDefinition('keep')
+    description = AttributeDefinition('keep')
+    first_appearance_characters = AttributeDefinition('Characters')
+    first_appearance_concepts = AttributeDefinition('Concepts')
+    first_appearance_locations = AttributeDefinition('Locations')
+    first_appearance_objects = AttributeDefinition('Objects')
+    first_appearance_storyarcs = AttributeDefinition('StoryArcs')
+    first_appearance_teams = AttributeDefinition('Teams')
+    has_staff_review = AttributeDefinition('keep')
+    id = AttributeDefinition('keep')
+    image = AttributeDefinition('keep')
+    episode_number = AttributeDefinition('keep')
+    location_credits = AttributeDefinition('Locations')
+    name = AttributeDefinition('keep')
+    object_credits = AttributeDefinition('Objects')
+    person_credits = AttributeDefinition('People')
+    site_detail_url = AttributeDefinition('keep')
+    story_arc_credits = AttributeDefinition('StoryArcs')
+    team_credits = AttributeDefinition('team_credits')
+    series = AttributeDefinition('Series')
+
+class Episodes(_SortableListResource):
+    pass
+
 class Issue(_SingularResource):
     aliases = AttributeDefinition('keep')
     api_detail_url = AttributeDefinition('keep')
@@ -622,23 +662,23 @@ class Issue(_SingularResource):
     volume = AttributeDefinition('Volume')
 
     def __unicode__(self):
-        string = u""
+        string = ""
         if 'name' in self._fields and self._fields['name'] != None:
-            string += unicode(self.name.encode(
+            string += str(self.name.encode(
                         'ascii',
                         'backslashreplace'
-                    ))+u" "
+                    ))+" "
             if 'issue_number' in self._fields:
-                string += u"#"+unicode(self.issue_number)+u" "
+                string += "#"+str(self.issue_number)+" "
         else:
             if 'issue_number' in self._fields:
-                string += u"#"+unicode(self.issue_number)+u" "
+                string += "#"+str(self.issue_number)+" "
             if 'volume' in self._fields:
-                string = unicode(self.volume.name.encode(
+                string = str(self.volume.name.encode(
                         'ascii',
                         'backslashreplace'
-                    ))+u" "+string
-        return string + u"["+unicode(self.id)+u"]"
+                    ))+" "+string
+        return string + "["+str(self.id)+"]"
 
     def _fix_api_error(self, name):
         if name == 'characters_died_in':
@@ -698,7 +738,7 @@ class Movie(_SingularResource):
                             int(str(value).split(':')[1]) \
                                 if ':' in str(value) \
                                 else int(value),
-            basestring
+            str
         )
     site_detail_url = AttributeDefinition('keep')
     studios = AttributeDefinition('keep')
@@ -763,14 +803,14 @@ class Person(_SingularResource):
             lambda value:   str_to_datetime(value.get('date')) if 
                                 isinstance(value, dict) else
                             str_to_datetime(value),
-            (dict, basestring)
+            (dict, str)
         )
     deck = AttributeDefinition('keep')
     description = AttributeDefinition('keep')
     email = AttributeDefinition('keep')
     gender = AttributeDefinition(
-            lambda value:   u'\u2642' if value == 1 else
-                            u'\u2640' if value == 2 else u'\u26a7',
+            lambda value:   '\u2642' if value == 1 else
+                            '\u2640' if value == 2 else '\u26a7',
             int
         )
     hometown = AttributeDefinition('keep')
@@ -848,6 +888,28 @@ class Publishers(_SortableListResource):
 class Search(_ListResource):
     def __init__(self, query, **kwargs):
         super(Search, self).__init__(query=query, **kwargs)
+
+class Series(_SingularResource):
+    aliases = AttributeDefinition('keep')
+    api_detail_url = AttributeDefinition('keep')
+    character_credits = AttributeDefinition('Characters')
+    count_of_episodes = AttributeDefinition('keep')
+    date_added = AttributeDefinition(datetime.datetime)
+    date_last_updated = AttributeDefinition(datetime.datetime)
+    deck = AttributeDefinition('keep')
+    description = AttributeDefinition('keep')
+    first_episode = AttributeDefinition('Episode')
+    id = AttributeDefinition('keep')
+    image = AttributeDefinition('keep')
+    last_episode = AttributeDefinition('Episode')
+    location_credits = AttributeDefinition('Locations')
+    name = AttributeDefinition('keep')
+    publisher = AttributeDefinition('Publisher')
+    site_detail_url = AttributeDefinition('keep')
+    start_year = AttributeDefinition('keep')
+
+class SeriesList(_ListResource):
+    pass
 
 class StoryArc(_SingularResource):
     aliases = AttributeDefinition('keep')
@@ -931,7 +993,7 @@ class Types(_ListResource):
             self._ready = True
 
     def __getitem__(self, key):
-        if isinstance(key, (int, long, slice)):
+        if isinstance(key, (int, slice)):
             return super(Types, self).__getitem__(key)
         if isinstance(key, type):
             return self._mapping[self.snakify_type_name(key)]
@@ -1002,6 +1064,7 @@ class Volume(_SingularResource):
     first_issue = AttributeDefinition('Issue')
     id = AttributeDefinition('keep')
     image = AttributeDefinition('keep')
+    issues = AttributeDefinition('Issues')
     last_issue = AttributeDefinition('Issue')
     locations = AttributeDefinition('Locations')
     name = AttributeDefinition('keep')
